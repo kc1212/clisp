@@ -1,4 +1,3 @@
-hsi
+clip
 ===
 
-haskell scheme interpreter

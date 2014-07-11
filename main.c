@@ -1,24 +1,25 @@
 #include <stdio.h>
 #include <stdlib.h>
-
 #include <editline/readline.h>
 
-#include "mpc/mpc.h"
 #include "parser.h"
 
 int main(void)
 {
-	puts("lisp v0.0");
+	init_parser();
+	puts("clisp v0.0");
 
 	for (;;)
 	{
-		char* input = readline("lisp> ");
+		char* input = readline("clisp> ");
 		add_history(input);
-		printf("u typed: %s\n", input);
 
+		parse(input);
 		free(input);
 	}
+
 	clear_history();
+	mpc_cleanup(4, Number, Operator, Expr, Lispy);
 	return 0;
 }
 
