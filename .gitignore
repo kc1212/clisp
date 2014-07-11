@@ -1,15 +1,29 @@
-dist
-cabal-dev
+# Object files
 *.o
-*.hi
-*.chi
-*.chs.h
-.virtualenv
-.hsenv
-.cabal-sandbox/
-cabal.sandbox.config
-cabal.config
+*.ko
+*.obj
+*.elf
 
-Main
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+lisp
 
 
