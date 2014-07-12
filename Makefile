@@ -3,16 +3,21 @@ WFLAGS=-W -Wall -pedantic -std=c99 -g -O0
 LFLAGS=-lm -ledit
 TARGET=clisp
 
-all: main.o mpc.o parser.o
-	$(CC) main.o mpc.o parser.o $(WFLAGS) $(LFLAGS) -o $(TARGET)
+all: $(TARGET)
 
-main.o:
+$(TARGET): main.o mpc.o parser.o eval.o
+	$(CC) main.o mpc.o parser.o eval.o $(WFLAGS) $(LFLAGS) -o $(TARGET)
+
+main.o: main.c
 	$(CC) main.c $(WFLAGS) -c
 
-parser.o:
+eval.o: eval.c
+	$(CC) eval.c $(WFLAGS) -c
+
+parser.o: parser.c
 	$(CC) parser.c $(WFLAGS) -c
 
-mpc.o:
+mpc.o: mpc/mpc.c
 	$(CC) mpc/mpc.c -c
 
 clean:

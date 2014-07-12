@@ -24,6 +24,7 @@
 *.x86_64
 *.hex
 
-lisp
+clisp
+tags
 
 

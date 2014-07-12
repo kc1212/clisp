@@ -9,7 +9,8 @@ mpc_parser_t* Expr;
 mpc_parser_t* Lisp;
 
 void init_parser();
-void parse(const char* input);
+mpc_ast_t* parse(const char* input);
+void del_ast(mpc_ast_t*  ast);
 
 #endif
 

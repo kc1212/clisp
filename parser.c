@@ -1,5 +1,19 @@
 
+#include <string.h>
+#include <ctype.h>
+
 #include "parser.h"
+
+static int all_isspace(const char* input)
+{
+	while (isspace(*input))
+		input++;
+
+	if (*input== '\0')
+		return 1;
+
+	return 0;
+}
 
 void init_parser()
 {
@@ -18,16 +32,25 @@ void init_parser()
 		Number, Operator, Expr, Lisp);
 }
 
-void parse(const char* input)
+// abstract syntax tree
+mpc_ast_t* parse(const char* input)
 {
 	mpc_result_t r;
-	if (mpc_parse("<stdin>", input, Lisp, &r)) {
+	if (mpc_parse("<stdin>", input, Lisp, &r))
+	{
 		mpc_ast_print(r.output);
-		mpc_ast_delete(r.output);
-	} else {
+		return r.output;
+	}
+	else if (all_isspace(input))
+	{
+		mpc_err_delete(r.error);
+	}
+	else
+	{
 		mpc_err_print(r.error);
 		mpc_err_delete(r.error);
 	}
+	return NULL;
 }
 
 
