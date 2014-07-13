@@ -1,5 +1,8 @@
 
 #include "eval.h"
+#include "math.h"
+#include "common.h"
+
 #include <string.h>
 
 int eval(mpc_ast_t * ast)
@@ -29,6 +32,10 @@ long eval_op(long x, char* op, long y)
 	if (!strcmp(op, "-")) return x - y;
 	if (!strcmp(op, "*")) return x * y;
 	if (!strcmp(op, "/")) return x / y;
+	if (!strcmp(op, "%")) return x % y;
+	if (!strcmp(op, "^")) return pow(x,y);
+	if (!strcmp(op, "min")) return MIN(x,y);
+	if (!strcmp(op, "max")) return MAX(x,y);
 	return 0;
 }
 

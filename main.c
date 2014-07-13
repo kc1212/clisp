@@ -28,7 +28,7 @@ int main(void)
 			free(input);
 			continue;
 		}
-		
+
 		printf("%d\n", eval(ast));
 		mpc_ast_delete(ast);
 		free(input);

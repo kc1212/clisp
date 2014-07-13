@@ -25,7 +25,7 @@ void init_parser()
 	mpca_lang(MPCA_LANG_DEFAULT,
 		"\
 		number		: /-?[0-9]+/ ;\
-		operator	: '+' | '-' | '*' | '/' ;\
+		operator	: '+' | '-' | '*' | '/' | '%' | '^' | \"min\" | \"max\" ;\
 		expr		: <number> | '(' <operator> <expr>+ ')' ;\
 		lisp		: /^/ <operator> <expr>+ /$/ ;\
 		",
