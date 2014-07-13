@@ -25,6 +25,7 @@
 *.hex
 
 clisp
+test_clisp
 tags
 
 

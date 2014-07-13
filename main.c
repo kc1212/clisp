@@ -7,8 +7,8 @@
 
 int main(void)
 {
-	init_parser();
 	puts("clisp v0.0");
+	init_parser();
 
 	for (;;)
 	{
