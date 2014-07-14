@@ -26,15 +26,32 @@ int ast_size(mpc_ast_t* ast)
 	return ctr;
 }
 
+void test_lval_num()
+{
+	lval v = lval_num(123);
+	assert(LVAL_NUM == v.type);
+	assert(123 == v.num);
+}
+
+void test_lval_err()
+{
+	lval v = lval_err(123);
+	assert(LVAL_ERR == v.type);
+	assert(123 == v.err);
+}
+
 void test_ast_size_5()
 {
 	mpc_ast_t* ast = parse("+ 1");
 	assert(5 == ast_size(ast));
 }
 
+
 int main(void)
 {
 	init_parser();
+	run_test(test_lval_num);
+	run_test(test_lval_err);
 	run_test(test_ast_size_5);
 	printf("OK\n");
 	return 0;
