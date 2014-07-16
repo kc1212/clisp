@@ -3,6 +3,7 @@
 #include <ctype.h>
 
 #include "parser.h"
+#include "common.h"
 
 static int all_isspace(const char* input)
 {
@@ -38,16 +39,19 @@ mpc_ast_t* parse(const char* input)
 	mpc_result_t r;
 	if (mpc_parse("<stdin>", input, Lisp, &r))
 	{
-		mpc_ast_print(r.output);
+		log_info("Parsing successful: %s", input);
+		mpc_ast_print_to(r.output, stderr);
 		return r.output;
 	}
 	else if (all_isspace(input))
 	{
+		log_info("Parsing failed: %s (empty) ", input);
 		mpc_err_delete(r.error);
 	}
 	else
 	{
-		mpc_err_print(r.error);
+		log_info("Parsing failed: %s", input);
+		mpc_err_print_to(r.error, stderr);
 		mpc_err_delete(r.error);
 	}
 	return NULL;

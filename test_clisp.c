@@ -1,5 +1,6 @@
 
 #include <assert.h>
+
 #include "mpc/mpc.h"
 
 #include "common.h"
@@ -7,8 +8,11 @@
 #include "parser.h"
 
 #define run_test(fn_name)\
-	printf("%s\n", #fn_name);\
-	fn_name();
+	printf("%s", #fn_name);\
+	fprintf(stderr, "%s\n", #fn_name);\
+	fn_name();\
+	for (size_t i = 0; i < 20 - strlen(#fn_name); i++) printf(".");\
+	printf("OK\n");
 
 int ast_size(mpc_ast_t* ast)
 {
@@ -49,11 +53,20 @@ void test_ast_size_5()
 
 int main(void)
 {
+	FILE* fp = freopen(LOGFILE, "w+", stderr);
+	if (NULL == fp)
+	{
+		log_err("freopen failed on %s", LOGFILE);
+		return 1;
+	}
+
 	init_parser();
 	run_test(test_lval_num);
 	run_test(test_lval_err);
 	run_test(test_ast_size_5);
-	printf("OK\n");
+	printf("Done\n");
+
+	fclose(fp);
 	return 0;
 }
 

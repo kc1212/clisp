@@ -27,5 +27,7 @@
 clisp
 test_clisp
 tags
+logs/
+bin/
 
 
