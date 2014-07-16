@@ -1,20 +1,25 @@
 
 #include "eval.h"
 #include "math.h"
-#include "common.h"
 
 #include <string.h>
 
-int eval(mpc_ast_t * ast)
+static lval eval_op(lval x, char* op, lval y);
+
+lval eval(mpc_ast_t * ast)
 {
 	if (!ast)
-		return -1; // need better return code
+		return lval_err(LERR_OTHER);
 
 	if (strstr(ast->tag, "number"))
-		return atoi(ast->contents);
+	{
+		errno = 0;
+		long x = strtol(ast->contents, NULL, 10);
+		return errno != ERANGE ? lval_num(x) : lval_err(LERR_BAD_NUM);
+	}
 
 	char* op = ast->children[1]->contents;
-	long x = eval(ast->children[2]);
+	lval x = eval(ast->children[2]);
 
 	int i = 3;
 	while (strstr(ast->children[i]->tag, "expr"))
@@ -26,17 +31,27 @@ int eval(mpc_ast_t * ast)
 	return x;
 }
 
-long eval_op(long x, char* op, long y)
+static lval eval_op(lval x, char* op, lval y)
 {
-	if (!strcmp(op, "+")) return x + y;
-	if (!strcmp(op, "-")) return x - y;
-	if (!strcmp(op, "*")) return x * y;
-	if (!strcmp(op, "/")) return x / y;
-	if (!strcmp(op, "%")) return x % y;
-	if (!strcmp(op, "^")) return pow(x,y);
-	if (!strcmp(op, "min")) return MIN(x,y);
-	if (!strcmp(op, "max")) return MAX(x,y);
-	return 0;
+	if (x.type == LVAL_ERR) return x;
+	if (y.type == LVAL_ERR) return y;
+
+	// TODO check for overflow?
+	if (!strcmp(op, "+")) return lval_num(x.num + y.num);
+	if (!strcmp(op, "-")) return lval_num(x.num - y.num);
+	if (!strcmp(op, "*")) return lval_num(x.num * y.num);
+
+	if (!strcmp(op, "/"))
+	{
+		return (0 == y.num) ? lval_err(LERR_DIV_ZERO) : lval_num(x.num / y.num);
+	}
+
+	if (!strcmp(op, "%")) return lval_num(x.num % y.num);
+	if (!strcmp(op, "^")) return lval_num((long)pow(x.num, y.num));
+	if (!strcmp(op, "min")) return lval_num(MIN(x.num, y.num));
+	if (!strcmp(op, "max")) return lval_num(MAX(x.num, y.num));
+
+	return lval_err(LERR_BAD_OP);
 }
 
 

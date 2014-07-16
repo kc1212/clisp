@@ -3,9 +3,9 @@
 #define EVAL_H_
 
 #include "mpc/mpc.h"
+#include "common.h"
 
-int eval(mpc_ast_t * ast);
-long eval_op(long x, char* op, long y);
+lval eval(mpc_ast_t * ast);
 
 #endif
 

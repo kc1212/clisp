@@ -60,21 +60,21 @@ void test_ast_failure()
 void test_eval_add()
 {
 	mpc_ast_t* ast = parse("+ 123 321");
-	assert(444 == eval(ast));
+	assert(444 == eval(ast).num);
 	mpc_ast_delete(ast);
 }
 
 void test_eval_subtract1()
 {
 	mpc_ast_t* ast = parse("- 123 321");
-	assert(-198 == eval(ast));
+	assert(-198 == eval(ast).num);
 	mpc_ast_delete(ast);
 }
 
 void test_eval_subtract2()
 {
 	mpc_ast_t* ast = parse("- 321 321");
-	assert(0 == eval(ast));
+	assert(0 == eval(ast).num);
 	mpc_ast_delete(ast);
 }
 

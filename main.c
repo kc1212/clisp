@@ -38,7 +38,8 @@ int main(void)
 			continue;
 		}
 
-		printf("%d\n", eval(ast));
+		lval_println(eval(ast));
+
 		mpc_ast_delete(ast);
 		free(input);
 	}

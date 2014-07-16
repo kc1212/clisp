@@ -51,6 +51,7 @@ mpc_ast_t* parse(const char* input)
 	else
 	{
 		log_info("Parsing failed: %s", input);
+		mpc_err_print(r.error);
 		mpc_err_print_to(r.error, stderr);
 		mpc_err_delete(r.error);
 	}
