@@ -16,7 +16,7 @@ int main(void)
 		return 1;
 	}
 
-	puts("clisp v0.0");
+	puts("toylist v0.0");
 	init_parser();
 
 	for (;;)

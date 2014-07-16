@@ -24,8 +24,8 @@
 *.x86_64
 *.hex
 
-clisp
-test_clisp
+toylisp
+test_toylisp
 tags
 logs/
 bin/
