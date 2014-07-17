@@ -3,7 +3,8 @@
 
 #include "mpc/mpc.h"
 
-mpc_parser_t* Number;
+mpc_parser_t* Integer;
+mpc_parser_t* Float;
 mpc_parser_t* Operator;
 mpc_parser_t* Expr;
 mpc_parser_t* Lisp;

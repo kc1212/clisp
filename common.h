@@ -22,8 +22,13 @@ enum {LERR_DIV_ZERO, LERR_BAD_OP, LERR_BAD_NUM, LERR_OTHER};
 typedef struct
 {
 	int type;
-	long num;
 	int err;
+	long num;
+// 	union
+// 	{
+// 		long l;
+// 		double f;
+// 	} data;
 } lval;
 
 lval lval_num(long x);

@@ -45,7 +45,7 @@ int main(void)
 	}
 
 	clear_history();
-	mpc_cleanup(4, Number, Operator, Expr, Lisp);
+	mpc_cleanup(5, Integer, Float, Operator, Expr, Lisp);
 	fclose(fp);
 	return 0;
 }

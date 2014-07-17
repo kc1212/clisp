@@ -11,11 +11,17 @@ lval eval(mpc_ast_t * ast)
 	if (!ast)
 		return lval_err(LERR_OTHER);
 
-	if (strstr(ast->tag, "number"))
+	if (strstr(ast->tag, "integer"))
 	{
 		errno = 0;
 		long x = strtol(ast->contents, NULL, 10);
 		return errno != ERANGE ? lval_num(x) : lval_err(LERR_BAD_NUM);
+	}
+
+	if (strstr(ast->tag, "float"))
+	{
+		// TODO
+		return lval_err(LERR_BAD_NUM);
 	}
 
 	char* op = ast->children[1]->contents;

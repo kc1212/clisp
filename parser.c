@@ -18,19 +18,19 @@ static int all_isspace(const char* input)
 
 void init_parser()
 {
-	Number		= mpc_new("number");
+	Integer		= mpc_new("integer");
+	Float		= mpc_new("float");
 	Operator	= mpc_new("operator");
 	Expr		= mpc_new("expr");
 	Lisp		= mpc_new("lisp");
 
 	mpca_lang(MPCA_LANG_DEFAULT,
-		"\
-		number		: /-?[0-9]+/ ;\
-		operator	: '+' | '-' | '*' | '/' | '%' | '^' | \"min\" | \"max\" ;\
-		expr		: <number> | '(' <operator> <expr>+ ')' ;\
-		lisp		: /^/ <operator> <expr>+ /$/ ;\
-		",
-		Number, Operator, Expr, Lisp);
+		"integer	: /-?[0-9]+/ ;"
+		"float		: /-?[0-9]*\\.[0-9]+/ | /-?[0-9]+\\.[0-9]*/ ;" // TODO '1.' does not match
+		"operator	: '+' | '-' | '*' | '/' | '%' | '^' | \"min\" | \"max\" ;"
+		"expr		: <integer> | <float> | '(' <operator> <expr>+ ')' ;"
+		"lisp		: /^/ <operator> <expr>+ /$/ ;",
+		Integer, Float, Operator, Expr, Lisp);
 }
 
 // abstract syntax tree
