@@ -39,19 +39,18 @@ mpc_ast_t* parse(const char* input)
 	mpc_result_t r;
 	if (mpc_parse("<stdin>", input, Lisp, &r))
 	{
-		log_info("Parsing successful: %s", input);
-		mpc_ast_print_to(r.output, stderr);
+		log_info_to(logfp, "Parsing successful: %s", input);
+		mpc_ast_print_to(r.output, logfp);
 		return r.output;
 	}
 	else if (all_isspace(input))
 	{
-		log_info("Parsing failed: %s (empty) ", input);
+		log_info_to(logfp, "Parsing failed: %s (empty) ", input);
 		mpc_err_delete(r.error);
 	}
 	else
 	{
-		log_info("Parsing failed: %s", input);
-		mpc_err_print(r.error);
+		log_info_to(logfp, "Parsing failed: %s", input);
 		mpc_err_print_to(r.error, stderr);
 		mpc_err_delete(r.error);
 	}

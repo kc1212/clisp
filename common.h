@@ -5,18 +5,24 @@
 #include "mpc/mpc.h"
 
 #define LOGFILE "logs/logs.txt"
+#define ERRFILE "logs/logs.err.txt"
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
 // error macros, taken from zed shaw
 #define clean_errno() (errno == 0 ? "None" : strerror(errno))
-#define log_err(M, ...) fprintf(stderr, "[ERROR] (%s:%d: errno: %s) " M "\n", __FILE__ , __LINE__ , clean_errno() , __VA_ARGS__)
-#define log_warn(M, ...) fprintf(stderr, "[WARN] (%s:%d: errno: %s) " M "\n", __FILE__, __LINE__, clean_errno(), __VA_ARGS__)
-#define log_info(M, ...) fprintf(stderr, "[INFO] (%s:%d) " M "\n", __FILE__, __LINE__, __VA_ARGS__)
-#define debug(M, ...) fprintf(stderr, "DEBUG %s:%d: " M "\n", __FILE__ , __LINE__ , __VA_ARGS__)
+#define log_err_to(fd, M, ...) fprintf(fd, "[ERROR] (%s:%d: errno: %s) " M "\n", __FILE__ , __LINE__ , clean_errno() , __VA_ARGS__)
+#define log_warn_to(fd, M, ...) fprintf(fd, "[WARN] (%s:%d: errno: %s) " M "\n", __FILE__, __LINE__, clean_errno(), __VA_ARGS__)
+#define log_info_to(fd, M, ...) fprintf(fd, "[INFO] (%s:%d) " M "\n", __FILE__, __LINE__, __VA_ARGS__)
+#define debug_to(fd, M, ...) fprintf(fd, "DEBUG %s:%d: " M "\n", __FILE__ , __LINE__ , __VA_ARGS__)
 
-enum {LVAL_NUM, LVAL_ERR};
+#define log_err(M, ...) log_err_to(stderr, M, __VA_ARGS__)
+#define log_warn(M, ...) log_warn_to(stderr, M, __VA_ARGS__)
+#define log_info(M, ...) log_info_to(stderr, M, __VA_ARGS__)
+#define debug(M, ...) debug_to(stderr, M, __VA_ARGS__)
+
+enum {LVAL_INT, LVAL_FLT, LVAL_ERR};
 enum {LERR_DIV_ZERO, LERR_BAD_OP, LERR_BAD_NUM, LERR_OTHER};
 
 typedef struct
@@ -30,6 +36,9 @@ typedef struct
 // 		double f;
 // 	} data;
 } lval;
+
+FILE* logfp;
+FILE* errfp;
 
 lval lval_num(long x);
 lval lval_err(int x);

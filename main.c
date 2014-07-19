@@ -9,8 +9,8 @@
 int main(void)
 {
 	// TODO make this optional, i.e. parse argc argv
-	FILE* fp = freopen(LOGFILE, "w+", stderr);
-	if (NULL == fp)
+	logfp = fopen(LOGFILE, "w+");
+	if (NULL == logfp)
 	{
 		log_err("freopen failed on %s", LOGFILE);
 		return 1;
@@ -46,7 +46,7 @@ int main(void)
 
 	clear_history();
 	mpc_cleanup(5, Integer, Float, Operator, Expr, Lisp);
-	fclose(fp);
+	fclose(logfp);
 	return 0;
 }
 

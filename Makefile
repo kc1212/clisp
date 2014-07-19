@@ -4,6 +4,7 @@ LFLAGS=-lm -ledit
 TARGET=toylisp
 
 all: $(TARGET) test
+	mkdir -p logs
 	./test_toylisp
 
 $(TARGET): mpc.o *.c *.h
