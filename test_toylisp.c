@@ -12,7 +12,7 @@
 	fprintf(logfp, "\n%s\n", #fn_name);\
 	fprintf(stderr, "\n%s\n", #fn_name);\
 	fn_name();\
-	for (size_t i = 0; i < 24 - strlen(#fn_name); i++) printf(".");\
+	for (size_t i = 0; i < 26 - strlen(#fn_name); i++) printf(".");\
 	printf("OK\n");
 
 int ast_size(mpc_ast_t* ast)
@@ -31,11 +31,11 @@ int ast_size(mpc_ast_t* ast)
 	return ctr;
 }
 
-void test_lval_int()
+void test_lval_long()
 {
-	lval v = lval_num(123);
-	assert(LVAL_INT == v.type);
-	assert(123 == v.num);
+	lval v = lval_long(123);
+	assert(LVAL_LNG == v.type);
+	assert(123 == v.data.lng);
 }
 
 void test_lval_err()
@@ -45,10 +45,12 @@ void test_lval_err()
 	assert(123 == v.err);
 }
 
-void test_ast_size_5()
+void test_ast_type()
 {
-	mpc_ast_t* ast = parse("+ 1");
-	assert(5 == ast_size(ast));
+	mpc_ast_t* ast = parse("+ 1.1 1");
+	assert(6 == ast_size(ast));
+	assert(strstr(ast->children[2]->tag, "double"));
+	assert(strstr(ast->children[3]->tag, "long"));
 	mpc_ast_delete(ast);
 }
 
@@ -62,21 +64,42 @@ void test_ast_failure()
 void test_eval_arithmetic()
 {
 	mpc_ast_t* ast = parse("+ 1 2 (- 20 23) (* 3 7) (/ 9 (/ 14 2))");
-	assert(22 == eval(ast).num);
+	assert(22 == eval(ast).data.lng);
+	mpc_ast_delete(ast);
+}
+
+void test_eval_arithmetic_dbl()
+{
+	mpc_ast_t* ast = parse("+ 1.5 1.5 (- 20. 23) (* 3. 7) (/ 9 (/ 6.0 2))");
+	assert(24. == eval(ast).data.dbl);
 	mpc_ast_delete(ast);
 }
 
 void test_eval_pow()
 {
 	mpc_ast_t* ast = parse("^ 2 2 2 2 2");
-	assert(65536 == eval(ast).num);
+	assert(65536 == eval(ast).data.lng);
+	mpc_ast_delete(ast);
+}
+
+void test_eval_pow_dbl()
+{
+	mpc_ast_t* ast = parse("^ 2 .5");
+	assert(sqrt(2.0) == eval(ast).data.dbl);
 	mpc_ast_delete(ast);
 }
 
 void test_eval_maxmin()
 {
 	mpc_ast_t* ast = parse("max 1 2 3 4 (min 5 6 7 8)");
-	assert(5 == eval(ast).num);
+	assert(5 == eval(ast).data.lng);
+	mpc_ast_delete(ast);
+}
+
+void test_eval_maxmin_dbl()
+{
+	mpc_ast_t* ast = parse("max 1 2 3.3 4.4 (min 5.5 6 7 8)");
+	assert(5.5 == eval(ast).data.dbl);
 	mpc_ast_delete(ast);
 }
 
@@ -97,13 +120,16 @@ int main(void)
 	}
 
 	init_parser();
-	run_test(test_lval_int);
+	run_test(test_lval_long);
 	run_test(test_lval_err);
-	run_test(test_ast_size_5);
+	run_test(test_ast_type);
 	run_test(test_ast_failure);
 	run_test(test_eval_arithmetic);
+	run_test(test_eval_arithmetic_dbl);
 	run_test(test_eval_pow);
+	run_test(test_eval_pow_dbl);
 	run_test(test_eval_maxmin);
+	run_test(test_eval_maxmin_dbl);
 	printf("Done\n");
 
 	fclose(logfp);

@@ -45,7 +45,7 @@ int main(void)
 	}
 
 	clear_history();
-	mpc_cleanup(5, Integer, Float, Operator, Expr, Lisp);
+	mpc_cleanup(5, Long, Double, Operator, Expr, Lisp);
 	fclose(logfp);
 	return 0;
 }

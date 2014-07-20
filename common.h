@@ -2,6 +2,7 @@
 #define COMMON_H_
 
 #include <stdio.h>
+#include <stdint.h>
 #include "mpc/mpc.h"
 
 #define LOGFILE "logs/logs.txt"
@@ -22,25 +23,25 @@
 #define log_info(M, ...) log_info_to(stderr, M, __VA_ARGS__)
 #define debug(M, ...) debug_to(stderr, M, __VA_ARGS__)
 
-enum {LVAL_INT, LVAL_FLT, LVAL_ERR};
+enum {LVAL_LNG, LVAL_DBL, LVAL_ERR};
 enum {LERR_DIV_ZERO, LERR_BAD_OP, LERR_BAD_NUM, LERR_OTHER};
 
 typedef struct
 {
 	int type;
 	int err;
-	long num;
-// 	union
-// 	{
-// 		long l;
-// 		double f;
-// 	} data;
+	union
+	{
+		int64_t lng;
+		double dbl;
+	} data;
 } lval;
 
 FILE* logfp;
 FILE* errfp;
 
-lval lval_num(long x);
+lval lval_long(int64_t x);
+lval lval_double(double x);
 lval lval_err(int x);
 void lval_print(lval v);
 void lval_println(lval v);
