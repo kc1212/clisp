@@ -33,16 +33,18 @@ int ast_size(mpc_ast_t* ast)
 
 void test_lval_long()
 {
-	lval v = lval_long(123);
-	assert(LVAL_LNG == v.type);
-	assert(123 == v.data.lng);
+	lval* v = lval_long(123);
+	assert(LVAL_LNG == v->type);
+	assert(123 == v->data.lng);
+	lval_delete(v);
 }
 
 void test_lval_err()
 {
-	lval v = lval_err(123);
-	assert(LVAL_ERR == v.type);
-	assert(123 == v.err);
+	lval* v = lval_err(123);
+	assert(LVAL_ERR == v->type);
+	assert(123 == v->err);
+	lval_delete(v);
 }
 
 void test_ast_type()

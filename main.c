@@ -2,9 +2,14 @@
 #include <stdlib.h>
 #include <editline/readline.h>
 
+#include "common.h"
 #include "parser.h"
 #include "eval.h"
-#include "common.h"
+
+extern const char LERR_DIV_ZERO[] = "Error: Division By Zero!";
+extern const char LERR_BAD_OP[] = "Error: Invalid Operator!";
+extern const char LERR_BAD_NUM[] = "Error: Invalid Number!";
+extern const char LERR_OTHER[] = "Critical Error!";
 
 int main(void)
 {
@@ -38,14 +43,16 @@ int main(void)
 			continue;
 		}
 
-		lval_println(eval(ast));
+		lval* x = lval_read(ast);
+		lval_println(x);
+		lval_del(x);
 
 		mpc_ast_delete(ast);
 		free(input);
 	}
 
 	clear_history();
-	mpc_cleanup(5, Long, Double, Operator, Expr, Lisp);
+	mpc_cleanup(6, Long, Double, Symbol, Sexpr, Expr, Lisp);
 	fclose(logfp);
 	return 0;
 }

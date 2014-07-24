@@ -20,17 +20,19 @@ void init_parser()
 {
 	Long		= mpc_new("long");
 	Double		= mpc_new("double");
-	Operator	= mpc_new("operator");
+	Symbol		= mpc_new("symbol");
+	Sexpr		= mpc_new("sexpr");
 	Expr		= mpc_new("expr");
 	Lisp		= mpc_new("lisp");
 
 	mpca_lang(MPCA_LANG_DEFAULT,
 		"long		: /\\d+/ ;"
 		"double		: /\\d*\\.\\d+|\\d+\\./ ;"
-		"operator	: '+' | '-' | '*' | '/' | '%' | '^' | \"min\" | \"max\" ;"
-		"expr		: <double> | <long> | '(' <operator> <expr>+ ')' ;"
-		"lisp		: /^/ <operator> <expr>+ /$/ ;",
-		Long, Double, Operator, Expr, Lisp);
+		"symbol		: '+' | '-' | '*' | '/' | '%' | '^' | \"min\" | \"max\" ;"
+		"sexpr		: '(' <expr>* ')' ;"
+		"expr		: <double> | <long> | <symbol> | <sexpr> ;"
+		"lisp		: /^/ <symbol> <expr>+ /$/ ;",
+		Long, Double, Symbol, Sexpr, Expr, Lisp);
 }
 
 // abstract syntax tree

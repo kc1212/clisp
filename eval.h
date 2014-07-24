@@ -9,7 +9,8 @@
 #define GET_LVAL_DATA(LVAL) \
 	(LVAL.type == LVAL_DBL ? LVAL.data.dbl : LVAL.data.lng)
 
-lval eval(mpc_ast_t * ast);
+// lval* eval(mpc_ast_t * ast);
+lval* lval_read(mpc_ast_t* ast);
 
 #endif
 

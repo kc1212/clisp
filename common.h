@@ -23,28 +23,39 @@
 #define log_info(M, ...) log_info_to(stderr, M, __VA_ARGS__)
 #define debug(M, ...) debug_to(stderr, M, __VA_ARGS__)
 
-enum {LVAL_LNG, LVAL_DBL, LVAL_ERR};
-enum {LERR_DIV_ZERO, LERR_BAD_OP, LERR_BAD_NUM, LERR_OTHER};
+extern const char LERR_DIV_ZERO[];
+extern const char LERR_BAD_OP[];
+extern const char LERR_BAD_NUM[];
+extern const char LERR_OTHER[];
 
-typedef struct
+enum {LVAL_LNG, LVAL_DBL, LVAL_SYM, LVAL_SEXPR, LVAL_ERR};
+// enum {LERR_DIV_ZERO, LERR_BAD_OP, LERR_BAD_NUM, LERR_OTHER};
+
+typedef struct lval
 {
 	int type;
-	int err;
+	int count;
+	char* err;
+	char* sym;
 	union
 	{
 		int64_t lng;
 		double dbl;
 	} data;
+	struct lval** cell;
 } lval;
 
 FILE* logfp;
 FILE* errfp;
 
-lval lval_long(int64_t x);
-lval lval_double(double x);
-lval lval_err(int x);
-void lval_print(lval v);
-void lval_println(lval v);
+lval* lval_long(int64_t x);
+lval* lval_double(double x);
+lval* lval_sym(const char sym[]);
+lval* lval_sexpr(void);
+lval* lval_err(const char msg[]);
+lval* lval_add(lval* v, lval* x);
+void lval_del(lval* v);
+void lval_println(lval* v);
 
 #endif
 
