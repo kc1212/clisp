@@ -5,34 +5,6 @@
 static void _lval_print(lval* v);
 static void _lval_expr_print(lval* v, const char open, const char close);
 
-lval* lval_long(int64_t x)
-{
-	lval* v = (lval*)calloc(1, sizeof(lval));
-	assert(v); // TODO need to improve
-	v->type = LVAL_LNG;
-	v->data.lng = x;
-	return v;
-}
-
-lval* lval_double(double x)
-{
-	lval* v = (lval*)calloc(1, sizeof(lval));
-	assert(v); // TODO need to improve
-	v->type = LVAL_DBL;
-	v->data.dbl = x;
-	return v;
-}
-
-lval* lval_sym(const char sym[])
-{
-	lval* v = (lval*)calloc(1, sizeof(lval));
-	assert(v); // TODO need to improve
-	v->type = LVAL_SYM;
-	v->sym = (char*)calloc(strlen(sym)+1, sizeof(char));
-	strcpy(v->sym, sym);
-	return v;
-}
-
 lval* lval_sexpr(void)
 {
 	lval* v = (lval*)calloc(1, sizeof(lval));

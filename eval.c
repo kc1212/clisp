@@ -4,10 +4,12 @@
 
 #include <string.h>
 #include <float.h>
+#include <assert.h>
 
 // static lval eval_op(lval x, char* op, lval y);
 static lval* _read_long(mpc_ast_t* ast);
 static lval* _read_double(mpc_ast_t* ast);
+static lval* _read_sym(const char sym[]);
 static lval* _lval_pop(lval* v, int i);
 static lval* _lval_take(lval* v, int i);
 
@@ -31,6 +33,7 @@ lval* lval_eval_sexpr(lval* v)
 	lval* f = _lval_pop(v, 0);
 	if (f->type != LVAL_SYM)
 	{
+		// log_err("First element must be a symbol, not of type %d", f->type);
 		lval_del(f); lval_del(v);
 		return lval_err(LERR_BAD_SEXPR_START);
 	}
@@ -52,6 +55,7 @@ lval* builtin_op(lval* v, char* op)
 	{
 		if (v->cell[i]->type != LVAL_LNG && v->cell[i]->type != LVAL_DBL)
 		{
+			// log_err("not all children are numbers - type: %d", v->cell[i]->type);
 			lval_del(v);
 			return lval_err(LERR_BAD_NUM);
 		}
@@ -118,13 +122,13 @@ lval* builtin_op(lval* v, char* op)
 	return x;
 }
 
-lval* lval_read(mpc_ast_t* ast)
+lval* lval_read(mpc_ast_t* ast) // converts ast to lval
 {
 	if (!ast) { return lval_err(LERR_OTHER); }
 
 	if (strstr(ast->tag, "long")) { return _read_long(ast); }
 	else if (strstr(ast->tag, "double")) { return _read_double(ast); }
-	else if (strstr(ast->tag, "symbol")) { return lval_sym(ast->contents); }
+	else if (strstr(ast->tag, "symbol")) { return _read_sym(ast->contents); }
 
 	lval* x = NULL;   // ">" is root
 	if (strcmp(ast->tag, ">") == 0 || strstr(ast->tag, "sexpr"))
@@ -143,16 +147,6 @@ lval* lval_read(mpc_ast_t* ast)
 		x = lval_add(x, lval_read(ast->children[i]));
 	}
 
-	// char* op = ast->children[1]->contents;
-	// lval x = eval(ast->children[2]);
-
-	// int i = 3;
-	// while (strstr(ast->children[i]->tag, "expr"))
-	// {
-	// 	x = eval_op(x, op, eval(ast->children[i]));
-	// 	i++;
-	// }
-
 	return x;
 }
 
@@ -165,7 +159,7 @@ static lval* _lval_pop(lval* v, int i)
 
 	v->count--;
 	v->cell = (lval**)realloc(v->cell, sizeof(lval*)*v->count);
-
+	assert(v->cell); // TODO
 	return x;
 }
 
@@ -182,11 +176,28 @@ static lval* _read_long(mpc_ast_t* ast)
 	int64_t x = strtol(ast->contents, NULL, 10);
 	if (errno)
 	{
-		log_err("strtol conversion failed for %s", ast->contents);
+		// log_err("strtol conversion failed for %s", ast->contents);
 		return lval_err(LERR_BAD_NUM);
 	}
-	return lval_long(x);
+
+	lval* v = (lval*)calloc(1, sizeof(lval));
+	assert(v); // TODO need to improve
+	v->type = LVAL_LNG;
+	v->data.lng = x;
+	return v;
 }
+
+static lval* _read_sym(const char sym[])
+{
+	lval* v = (lval*)calloc(1, sizeof(lval));
+	assert(v);
+	v->type = LVAL_SYM;
+	v->sym = (char*)calloc(strlen(sym)+1, sizeof(char));
+	assert(v->sym);
+	strcpy(v->sym, sym);
+	return v;
+}
+
 
 static lval* _read_double(mpc_ast_t* ast)
 {
@@ -194,20 +205,15 @@ static lval* _read_double(mpc_ast_t* ast)
 	double x = strtod(ast->contents, NULL);
 	if (errno)
 	{
-		log_err("strtod conversion failed for %s", ast->contents);
+		// log_err("strtod conversion failed for %s", ast->contents);
 		return lval_err(LERR_BAD_NUM);
 	}
-	return lval_double(x);
-}
 
-// static lval eval_op(lval x, char* op, lval y)
-// {
-// 	if (LVAL_ERR == x.type) return x;
-// 	if (LVAL_ERR == y.type) return y;
-// 
-// 	// TODO check for overflow
-// 
-// 	return lval_err(LERR_BAD_OP);
-// }
+	lval* v = (lval*)calloc(1, sizeof(lval));
+	assert(v); // TODO need to improve
+	v->type = LVAL_DBL;
+	v->data.dbl = x;
+	return v;
+}
 
 

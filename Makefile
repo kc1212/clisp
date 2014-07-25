@@ -3,9 +3,9 @@ WFLAGS=-W -Wall -pedantic -std=c99 -g -O0
 LFLAGS=-lm -ledit
 TARGET=toylisp
 
-all: $(TARGET) 
+all: $(TARGET) test
 	mkdir -p logs
-	# ./test_toylisp
+	./test_toylisp
 
 $(TARGET): mpc.o *.c *.h
 	$(CC) mpc.o common.c parser.c eval.c main.c $(WFLAGS) $(LFLAGS) -o $(TARGET)

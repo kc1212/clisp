@@ -23,7 +23,7 @@
 #define log_info(M, ...) log_info_to(stderr, M, __VA_ARGS__)
 #define debug(M, ...) debug_to(stderr, M, __VA_ARGS__)
 
-enum {LVAL_LNG, LVAL_DBL, LVAL_SYM, LVAL_SEXPR, LVAL_ERR};
+enum {LVAL_LNG, LVAL_DBL, LVAL_SYM, LVAL_SEXPR, LVAL_ERR}; // lval types types
 enum {LERR_DIV_ZERO, LERR_BAD_OP, LERR_BAD_NUM, LERR_BAD_SEXPR_START, LERR_OTHER};
 
 typedef struct lval
@@ -43,9 +43,6 @@ typedef struct lval
 FILE* logfp;
 FILE* errfp;
 
-lval* lval_long(int64_t x);
-lval* lval_double(double x);
-lval* lval_sym(const char sym[]);
 lval* lval_sexpr(void);
 lval* lval_err(int e);
 lval* lval_add(lval* v, lval* x);
