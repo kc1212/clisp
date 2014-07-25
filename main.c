@@ -6,11 +6,6 @@
 #include "parser.h"
 #include "eval.h"
 
-extern const char LERR_DIV_ZERO[] = "Error: Division By Zero!";
-extern const char LERR_BAD_OP[] = "Error: Invalid Operator!";
-extern const char LERR_BAD_NUM[] = "Error: Invalid Number!";
-extern const char LERR_OTHER[] = "Critical Error!";
-
 int main(void)
 {
 	// TODO make this optional, i.e. parse argc argv
@@ -43,7 +38,7 @@ int main(void)
 			continue;
 		}
 
-		lval* x = lval_read(ast);
+		lval* x = lval_eval(lval_read(ast));
 		lval_println(x);
 		lval_del(x);
 

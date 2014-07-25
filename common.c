@@ -43,13 +43,12 @@ lval* lval_sexpr(void)
 	return v;
 }
 
-lval* lval_err(const char msg[])
+lval* lval_err(int e)
 {
 	lval* v = (lval*)calloc(1, sizeof(lval));
 	assert(v); // TODO need to improve
 	v->type = LVAL_ERR;
-	v->err = (char*)calloc(strlen(msg)+1, sizeof(char));
-	strcpy(v->err, msg);
+	v->err = e;
 	return v;
 }
 
@@ -59,7 +58,7 @@ void lval_del(lval* v)
 	{
 		case LVAL_DBL:
 		case LVAL_LNG: break;
-		case LVAL_ERR: free(v->err); break;
+		case LVAL_ERR: break;
 		case LVAL_SYM: free(v->sym); break;
 
 		case LVAL_SEXPR:
@@ -105,6 +104,19 @@ static void _lval_print(lval* v)
 		case LVAL_DBL:		printf("%f", v->data.dbl);		break;
 		case LVAL_SYM:		printf("%s", v->sym);			break;
 		case LVAL_SEXPR:	_lval_expr_print(v, '(', ')');	break;
-		case LVAL_ERR:		printf("%s", v->err);			break;
+		case LVAL_ERR:
+			if (LERR_DIV_ZERO == v->err) { printf("Error: Division By Zero!\n"); }
+			if (LERR_BAD_OP == v->err) { printf("Error: Invalid Operator!\n"); }
+			if (LERR_BAD_NUM == v->err) { printf("Error: Invalid Number!\n"); }
+			if (LERR_OTHER == v->err) { printf("Critical Error!\n"); }
+			if (LERR_BAD_SEXPR_START == v->err) { printf("S-expression Does not start with symbol!\n"); }
+			break;
+		default:
+			printf("Critical Error! - undefined lval.type\n");
+			break;
 	}
 }
+
+
+
+

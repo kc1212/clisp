@@ -23,20 +23,15 @@
 #define log_info(M, ...) log_info_to(stderr, M, __VA_ARGS__)
 #define debug(M, ...) debug_to(stderr, M, __VA_ARGS__)
 
-extern const char LERR_DIV_ZERO[];
-extern const char LERR_BAD_OP[];
-extern const char LERR_BAD_NUM[];
-extern const char LERR_OTHER[];
-
 enum {LVAL_LNG, LVAL_DBL, LVAL_SYM, LVAL_SEXPR, LVAL_ERR};
-// enum {LERR_DIV_ZERO, LERR_BAD_OP, LERR_BAD_NUM, LERR_OTHER};
+enum {LERR_DIV_ZERO, LERR_BAD_OP, LERR_BAD_NUM, LERR_BAD_SEXPR_START, LERR_OTHER};
 
 typedef struct lval
 {
 	int type;
 	int count;
-	char* err;
-	char* sym;
+	int err;
+	char* sym; // op
 	union
 	{
 		int64_t lng;
@@ -52,7 +47,7 @@ lval* lval_long(int64_t x);
 lval* lval_double(double x);
 lval* lval_sym(const char sym[]);
 lval* lval_sexpr(void);
-lval* lval_err(const char msg[]);
+lval* lval_err(int e);
 lval* lval_add(lval* v, lval* x);
 void lval_del(lval* v);
 void lval_println(lval* v);
