@@ -26,8 +26,8 @@ void init_parser()
 	Lisp		= mpc_new("lisp");
 
 	mpca_lang(MPCA_LANG_DEFAULT,
-		"long		: /[+-]?\\d+/ ;"
-		"double		: /[+-]?\\d*\\.\\d+|[+-]?\\d+\\./ ;"
+		"long		: /-?\\d+/ ;"
+		"double		: /-?\\d*\\.\\d+|-?\\d+\\./ ;"
 		"symbol		: '+' | '-' | '*' | '/' | '%' | '^' | \"min\" | \"max\" ;"
 		"sexpr		: '(' <expr>* ')' ;"
 		"expr		: <double> | <long> | <symbol> | <sexpr> ;"

@@ -159,7 +159,7 @@ static lval* _lval_pop(lval* v, int i)
 
 	v->count--;
 	v->cell = (lval**)realloc(v->cell, sizeof(lval*)*v->count);
-	assert(v->cell); // TODO
+	if (0 != v->count) { assert(v->cell); }// TODO
 	return x;
 }
 
