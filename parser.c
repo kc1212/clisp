@@ -38,6 +38,12 @@ void init_parser()
 // abstract syntax tree
 mpc_ast_t* parse(const char* input)
 {
+	if (all_isspace(input))
+	{
+		log_info_to(logfp, "Parsing failed: %s (empty) ", input);
+		return NULL;
+	}
+
 	mpc_result_t r;
 	if (mpc_parse("<stdin>", input, Lisp, &r))
 	{
@@ -45,17 +51,10 @@ mpc_ast_t* parse(const char* input)
 		mpc_ast_print_to(r.output, logfp);
 		return r.output;
 	}
-	else if (all_isspace(input))
-	{
-		log_info_to(logfp, "Parsing failed: %s (empty) ", input);
-		mpc_err_delete(r.error);
-	}
-	else
-	{
-		log_info_to(logfp, "Parsing failed: %s", input);
-		mpc_err_print_to(r.error, stderr);
-		mpc_err_delete(r.error);
-	}
+
+	log_info_to(logfp, "Parsing failed: %s", input);
+	mpc_err_print_to(r.error, stderr);
+	mpc_err_delete(r.error);
 	return NULL;
 }
 

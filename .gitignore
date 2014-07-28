@@ -24,6 +24,11 @@
 *.x86_64
 *.hex
 
+# gcov files
+*.gcov
+*.gcda
+*.gcno
+
 toylisp
 test_toylisp
 tags

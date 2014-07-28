@@ -38,7 +38,7 @@ int main(void)
 			continue;
 		}
 
-		lval* x = lval_eval(lval_read(ast));
+		lval* x = eval(ast_to_lval(ast));
 		lval_println(x);
 		lval_del(x);
 

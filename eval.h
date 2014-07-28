@@ -14,9 +14,8 @@
 	{ LVAL->data.dbl = (double)LVAL->data.lng; LVAL->type = LVAL_DBL; }
 
 // lval* eval(mpc_ast_t * ast);
-lval* lval_read(mpc_ast_t* ast);
-lval* lval_eval(lval* v);
-lval* lval_eval_sexpr(lval* v);
+lval* ast_to_lval(mpc_ast_t* ast);
+lval* eval(lval* v);
 lval* builtin_op(lval* v, char* op);
 
 #endif

@@ -6,46 +6,16 @@
 #include <float.h>
 #include <assert.h>
 
-// static lval eval_op(lval x, char* op, lval y);
 static lval* _read_long(mpc_ast_t* ast);
 static lval* _read_double(mpc_ast_t* ast);
 static lval* _read_sym(const char sym[]);
-static lval* _lval_pop(lval* v, int i);
-static lval* _lval_take(lval* v, int i);
+static lval* _take_lval(lval* v, int i);
+static lval* _pop_lval(lval* v, int i);
+static lval* _eval_sexpr(lval* v);
 
-lval* lval_eval_sexpr(lval* v)
+lval* eval(lval* v)
 {
-	// eval children
-	for (int i = 0; i < v->count; i++)
-	{
-		v->cell[i] = lval_eval(v->cell[i]);
-	}
-
-	for (int i = 0; i < v->count; i++)
-	{
-		if (v->cell[i]->type == LVAL_ERR) { return _lval_take(v, i); }
-	}
-
-	if (v->count == 0) { return v; }
-	if (v->count == 1) { return _lval_take(v, 0); }
-
-	// take the first element and make sure it's a symbol (op)
-	lval* f = _lval_pop(v, 0);
-	if (f->type != LVAL_SYM)
-	{
-		// log_err("First element must be a symbol, not of type %d", f->type);
-		lval_del(f); lval_del(v);
-		return lval_err(LERR_BAD_SEXPR_START);
-	}
-
-	lval* result = builtin_op(v, f->sym);
-	lval_del(f);
-	return result;
-}
-
-lval* lval_eval(lval* v)
-{
-	if (v->type == LVAL_SEXPR) { return lval_eval_sexpr(v); }
+	if (v->type == LVAL_SEXPR) { return _eval_sexpr(v); }
 	return v; // return same v if not sexpr
 }
 
@@ -61,7 +31,7 @@ lval* builtin_op(lval* v, char* op)
 		}
 	}
 
-	lval* x = _lval_pop(v, 0);
+	lval* x = _pop_lval(v, 0);
 	if ((strcmp(op, "-") == 0) && v->count == 0)
 	{
 		if (LVAL_DBL == x->type) { x->data.dbl = -x->data.dbl; }
@@ -70,7 +40,7 @@ lval* builtin_op(lval* v, char* op)
 
 	while (v->count > 0)
 	{
-		lval* y = _lval_pop(v, 0);
+		lval* y = _pop_lval(v, 0);
 
 		if (x->type == LVAL_DBL || y->type == LVAL_DBL)
 		{
@@ -122,7 +92,7 @@ lval* builtin_op(lval* v, char* op)
 	return x;
 }
 
-lval* lval_read(mpc_ast_t* ast) // converts ast to lval
+lval* ast_to_lval(mpc_ast_t* ast) // converts ast to lval
 {
 	if (!ast) { return lval_err(LERR_OTHER); }
 
@@ -144,7 +114,7 @@ lval* lval_read(mpc_ast_t* ast) // converts ast to lval
 			|| strcmp(ast->children[i]->contents, "{") == 0
 			|| strcmp(ast->children[i]->tag,  "regex") == 0
 			) { continue; }
-		x = lval_add(x, lval_read(ast->children[i]));
+		x = lval_add(x, ast_to_lval(ast->children[i]));
 	}
 
 	return x;
@@ -152,20 +122,50 @@ lval* lval_read(mpc_ast_t* ast) // converts ast to lval
 
 // private functions: //////////////////////////////////////////////////////////
 
-static lval* _lval_pop(lval* v, int i)
+static lval* _eval_sexpr(lval* v)
+{
+	// eval children
+	for (int i = 0; i < v->count; i++)
+	{
+		v->cell[i] = eval(v->cell[i]);
+	}
+
+	for (int i = 0; i < v->count; i++)
+	{
+		if (v->cell[i]->type == LVAL_ERR) { return _take_lval(v, i); }
+	}
+
+	if (v->count == 0) { return v; }
+	if (v->count == 1) { return _take_lval(v, 0); }
+
+	// take the first element and make sure it's a symbol (op)
+	lval* f = _pop_lval(v, 0);
+	if (f->type != LVAL_SYM)
+	{
+		// log_err("First element must be a symbol, not of type %d", f->type);
+		lval_del(f); lval_del(v);
+		return lval_err(LERR_BAD_SEXPR_START);
+	}
+
+	lval* result = builtin_op(v, f->sym);
+	lval_del(f);
+	return result;
+}
+
+static lval* _pop_lval(lval* v, int i)
 {
 	lval* x = v->cell[i];
 	memmove(&v->cell[i], &v->cell[i+1], sizeof(lval*)*(v->count-i-1));
 
 	v->count--;
 	v->cell = (lval**)realloc(v->cell, sizeof(lval*)*v->count);
-	if (0 != v->count) { assert(v->cell); }// TODO
+	if (0 != v->count) { assert(v->cell); } // TODO
 	return x;
 }
 
-static lval* _lval_take(lval* v, int i)
+static lval* _take_lval(lval* v, int i)
 {
-	lval* x = _lval_pop(v, i);
+	lval* x = _pop_lval(v, i);
 	lval_del(v);
 	return x;
 }

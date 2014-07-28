@@ -17,8 +17,7 @@
 
 int ast_size(mpc_ast_t* ast)
 {
-	if (!ast)
-		return -1;
+	if (!ast) { return -1; }
 
 	int ctr = 1;
 	if (ast->children_num > 0) // if child_num is 0, 1 is returned
@@ -30,6 +29,8 @@ int ast_size(mpc_ast_t* ast)
 	}
 	return ctr;
 }
+
+// TODO, add tests for lval count and sexpr count
 
 void test_ast_type()
 {
@@ -51,7 +52,7 @@ void test_ast_failure()
 void test_eval_arithmetic()
 {
 	mpc_ast_t* ast = parse("+ 1 2 (- 20 23) (* 3 7) (/ 9 (/ 14 2))");
-	lval* v = lval_eval(lval_read(ast));
+	lval* v = eval(ast_to_lval(ast));
 	assert(LVAL_LNG == v->type);
 	assert(22 == v->data.lng);
 	lval_del(v);
@@ -61,7 +62,7 @@ void test_eval_arithmetic()
 void test_eval_arithmetic_dbl()
 {
 	mpc_ast_t* ast = parse("+ 1.5 1.5 (- 20. 23) (* 3. 7) (/ 9 (/ 6.0 2))");
-	lval* v = lval_eval(lval_read(ast));
+	lval* v = eval(ast_to_lval(ast));
 	assert(LVAL_DBL == v->type);
 	assert(24. == v->data.dbl);
 	lval_del(v);
@@ -71,7 +72,7 @@ void test_eval_arithmetic_dbl()
 void test_eval_pow()
 {
 	mpc_ast_t* ast = parse("^ 2 2 2 2 2");
-	lval* v = lval_eval(lval_read(ast));
+	lval* v = eval(ast_to_lval(ast));
 	assert(LVAL_LNG == v->type);
 	assert(65536 == v->data.lng);
 	lval_del(v);
@@ -81,7 +82,7 @@ void test_eval_pow()
 void test_eval_pow_dbl()
 {
 	mpc_ast_t* ast = parse("^ 2 .5");
-	lval* v = lval_eval(lval_read(ast));
+	lval* v = eval(ast_to_lval(ast));
 	assert(LVAL_DBL == v->type);
 	assert(sqrt(2.0) == v->data.dbl);
 	lval_del(v);
@@ -91,7 +92,7 @@ void test_eval_pow_dbl()
 void test_eval_maxmin()
 {
 	mpc_ast_t* ast = parse("max 1 2 3 4 (min 5 6 7 8)");
-	lval* v = lval_eval(lval_read(ast));
+	lval* v = eval(ast_to_lval(ast));
 	assert(LVAL_LNG == v->type);
 	assert(5 == v->data.lng);
 	lval_del(v);
@@ -101,7 +102,7 @@ void test_eval_maxmin()
 void test_eval_maxmin_dbl()
 {
 	mpc_ast_t* ast = parse("max 1 2 3.3 4.4 (min 5.5 6 7 8)");
-	lval* v = lval_eval(lval_read(ast));
+	lval* v = eval(ast_to_lval(ast));
 	assert(LVAL_DBL == v->type);
 	assert(5.5 == v->data.dbl);
 	lval_del(v);
@@ -111,7 +112,7 @@ void test_eval_maxmin_dbl()
 void test_non_number()
 {
 	mpc_ast_t* ast = parse("( / ( ) )");
-	lval* v = lval_eval(lval_read(ast));
+	lval* v = eval(ast_to_lval(ast));
 	assert(LVAL_ERR == v->type);
 	assert(LERR_BAD_NUM == v->err);
 	lval_del(v);
@@ -121,7 +122,7 @@ void test_non_number()
 void test_bad_sexpr_start()
 {
 	mpc_ast_t* ast = parse("( 1 () )");
-	lval* v = lval_eval(lval_read(ast));
+	lval* v = eval(ast_to_lval(ast));
 	assert(LVAL_ERR == v->type);
 	assert(LERR_BAD_SEXPR_START == v->err);
 	lval_del(v);
@@ -131,7 +132,7 @@ void test_bad_sexpr_start()
 void test_div_zero()
 {
 	mpc_ast_t* ast = parse("(/ 1 0 )");
-	lval* v = lval_eval(lval_read(ast));
+	lval* v = eval(ast_to_lval(ast));
 	assert(LVAL_ERR == v->type);
 	assert(LERR_DIV_ZERO == v->err);
 	lval_del(v);
@@ -141,11 +142,17 @@ void test_div_zero()
 void test_div_zero_dbl()
 {
 	mpc_ast_t* ast = parse("(/ 1 0.0000000000000001)");
-	lval* v = lval_eval(lval_read(ast));
+	lval* v = eval(ast_to_lval(ast));
 	assert(LVAL_ERR == v->type);
 	assert(LERR_DIV_ZERO == v->err);
 	lval_del(v);
 	mpc_ast_delete(ast);
+}
+
+void test_empty_input()
+{
+	mpc_ast_t* ast = parse("  ");
+	assert(NULL == ast);
 }
 
 int main(void)
@@ -177,6 +184,7 @@ int main(void)
 	run_test(test_bad_sexpr_start);
 	run_test(test_div_zero);
 	run_test(test_div_zero_dbl);
+	run_test(test_empty_input);
 	printf("Done\n");
 
 	fclose(logfp);
