@@ -22,6 +22,7 @@ void init_parser()
 	Double		= mpc_new("double");
 	Symbol		= mpc_new("symbol");
 	Sexpr		= mpc_new("sexpr");
+	Qexpr		= mpc_new("qexpr");
 	Expr		= mpc_new("expr");
 	Lisp		= mpc_new("lisp");
 
@@ -30,9 +31,10 @@ void init_parser()
 		"double		: /-?\\d*\\.\\d+|-?\\d+\\./ ;"
 		"symbol		: '+' | '-' | '*' | '/' | '%' | '^' | \"min\" | \"max\" ;"
 		"sexpr		: '(' <expr>* ')' ;"
-		"expr		: <double> | <long> | <symbol> | <sexpr> ;"
+		"qexpr		: '{' <expr>* '}' ;"
+		"expr		: <double> | <long> | <symbol> | <sexpr> | <qexpr> ;"
 		"lisp		: /^/ <expr>* /$/ ;",
-		Long, Double, Symbol, Sexpr, Expr, Lisp);
+		Long, Double, Symbol, Sexpr, Qexpr, Expr, Lisp);
 }
 
 // abstract syntax tree

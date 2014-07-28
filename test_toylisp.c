@@ -155,6 +155,14 @@ void test_empty_input()
 	assert(NULL == ast);
 }
 
+// void test_double_sexpr()
+// {
+// 	mpc_ast_t* = parse("()");
+// 	lval*v = ast_to_lval(ast);
+// 	lval_println(x);
+// 	// TODO
+// }
+
 int main(void)
 {
 	logfp = fopen(LOGFILE, "w+");

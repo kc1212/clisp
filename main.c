@@ -47,7 +47,7 @@ int main(void)
 	}
 
 	clear_history();
-	mpc_cleanup(6, Long, Double, Symbol, Sexpr, Expr, Lisp);
+	mpc_cleanup(7, Long, Double, Symbol, Qexpr, Sexpr, Expr, Lisp);
 	fclose(logfp);
 	return 0;
 }
