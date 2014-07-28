@@ -51,14 +51,10 @@ static void _lval_print(lval* v, FILE *fp)
 		case LVAL_SEXPR:	_lval_expr_print(v, '(', ')', fp);	break;
 		case LVAL_QEXPR:	_lval_expr_print(v, '{', '}', fp);	break;
 		case LVAL_ERR:
-			if (LERR_DIV_ZERO == v->err) { fprintf(fp, "Error: Division By Zero!\n"); }
-			if (LERR_BAD_OP == v->err) { fprintf(fp, "Error: Invalid Operator!\n"); }
-			if (LERR_BAD_NUM == v->err) { fprintf(fp, "Error: Invalid Number!\n"); }
-			if (LERR_OTHER == v->err) { fprintf(fp, "Critical Error!\n"); }
-			if (LERR_BAD_SEXPR_START == v->err) { fprintf(fp, "S-expression Does not start with symbol!\n"); }
+			fprintf(fp, "%s", err_strings[v->err]);
 			break;
 		default:
-			fprintf(fp, "Critical Error! - undefined lval.type\n");
+			fprintf(fp, "%s", err_strings[LERR_OTHER]);
 			break;
 	}
 }

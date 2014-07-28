@@ -23,8 +23,17 @@
 #define log_info(M, ...) log_info_to(stderr, M, __VA_ARGS__)
 #define debug(M, ...) debug_to(stderr, M, __VA_ARGS__)
 
-enum {LVAL_LNG, LVAL_DBL, LVAL_SYM, LVAL_SEXPR, LVAL_QEXPR, LVAL_ERR}; // lval types
-enum {LERR_DIV_ZERO, LERR_BAD_OP, LERR_BAD_NUM, LERR_BAD_SEXPR_START, LERR_OTHER};
+enum lval_type {LVAL_LNG, LVAL_DBL, LVAL_SYM, LVAL_SEXPR, LVAL_QEXPR, LVAL_ERR}; // lval types
+enum lval_err {LERR_DIV_ZERO, LERR_BAD_OP, LERR_BAD_NUM, LERR_BAD_SEXPR_START, LERR_OTHER};
+
+static const char* const err_strings[] =
+{
+	"Error: Division By Zero!\n",
+	"Error: Invalid Operator!\n",
+	"Error: Invalid Number!\n",
+	"S-expression Does not start with symbol!\n"
+	"Critical Error!\n",
+};
 
 typedef struct lval
 {
