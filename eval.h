@@ -13,10 +13,18 @@
 	if (LVAL_LNG == LVAL->type) \
 	{ LVAL->data.dbl = (double)LVAL->data.lng; LVAL->type = LVAL_DBL; }
 
-// lval* eval(mpc_ast_t * ast);
+#define LVAL_ASSERT(args, cond, err) \
+	if (!(cond)) { lval_del(args); return _lval_err(err); }
+
 lval* ast_to_lval(mpc_ast_t* ast);
 lval* eval(lval* v);
 lval* builtin_op(lval* v, char* op);
+lval* builtin_head(lval* a);
+lval* builtin_tail(lval* a);
+lval* builtin_eval(lval* a);
+lval* builtin_list(lval* a);
+lval* builtin_join(lval* a);
+lval* builtin(lval* a, char* x);
 
 #endif
 

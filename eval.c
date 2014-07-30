@@ -6,10 +6,11 @@
 #include <float.h>
 #include <assert.h>
 
-static lval* _take_lval(lval* v, int i);
-static lval* _pop_lval(lval* v, int i);
 static lval* _eval_sexpr(lval* v);
 
+static lval* _lval_take(lval* v, int i);
+static lval* _lval_pop(lval* v, int i);
+static lval* _lval_join(lval* x, lval* y);
 static lval* _lval_sexpr(void);
 static lval* _lval_qexpr(void);
 static lval* _lval_err(int e);
@@ -25,6 +26,23 @@ lval* eval(lval* v)
 	return v; // return same v if not sexpr
 }
 
+lval* builtin(lval* a, char* x)
+{
+	if (strcmp("list", x) == 0) { return builtin_list(a); }
+	if (strcmp("head", x) == 0) { return builtin_head(a); }
+	if (strcmp("tail", x) == 0) { return builtin_tail(a); }
+	if (strcmp("join", x) == 0) { return builtin_join(a); }
+	if (strcmp("eval", x) == 0) { return builtin_eval(a); }
+
+	if (strstr("^%+-/*", x) || strstr("min", x) || strstr("max", x) || strstr("pow", x))
+	{
+		return builtin_op(a, x);
+	}
+
+	lval_del(a);
+	return _lval_err(LERR_BAD_FUNCTION);
+}
+
 lval* builtin_op(lval* v, char* op)
 {
 	for (int i = 0; i < v->count; i++) // ensure all children are numbers
@@ -37,7 +55,7 @@ lval* builtin_op(lval* v, char* op)
 		}
 	}
 
-	lval* x = _pop_lval(v, 0);
+	lval* x = _lval_pop(v, 0);
 	if ((strcmp(op, "-") == 0) && v->count == 0)
 	{
 		if (LVAL_DBL == x->type) { x->data.dbl = -x->data.dbl; }
@@ -46,7 +64,7 @@ lval* builtin_op(lval* v, char* op)
 
 	while (v->count > 0)
 	{
-		lval* y = _pop_lval(v, 0);
+		lval* y = _lval_pop(v, 0);
 
 		if (x->type == LVAL_DBL || y->type == LVAL_DBL)
 		{
@@ -125,6 +143,59 @@ lval* ast_to_lval(mpc_ast_t* ast) // converts ast to lval
 	return x;
 }
 
+lval* builtin_head(lval* a)
+{
+	LVAL_ASSERT(a, (a->count == 1), LERR_HEAD_TOO_MANY_ARGS);
+	LVAL_ASSERT(a, (a->cell[0]->type == LVAL_QEXPR), LERR_HEAD_BAD_TYPE);
+	LVAL_ASSERT(a, (a->cell[0]->count != 0), LERR_HEAD_EMPTY);
+
+	lval* v = _lval_take(a, 0);
+	while (v->count > 1) { lval_del(_lval_pop(v, 1)); }
+	return v;
+}
+
+lval* builtin_tail(lval* a)
+{
+	LVAL_ASSERT(a, (a->count == 1), LERR_TAIL_TOO_MANY_ARGS);
+	LVAL_ASSERT(a, (a->cell[0]->type == LVAL_QEXPR), LERR_TAIL_BAD_TYPE);
+	LVAL_ASSERT(a, (a->cell[0]->count != 0), LERR_TAIL_EMPTY);
+
+	lval* v = _lval_take(a, 0);
+	lval_del(_lval_pop(v, 0));
+	return v;
+}
+
+lval* builtin_list(lval* a)
+{
+	a->type = LVAL_QEXPR;
+	return a;
+}
+
+lval* builtin_eval(lval* a)
+{
+	LVAL_ASSERT(a, (a->count == 1), LERR_EVAL_TOO_MANY_ARGS);
+	LVAL_ASSERT(a, (a->cell[0]->type == LVAL_QEXPR), LERR_EVAL_BAD_TYPE);
+
+	lval* x = _lval_take(a, 0);
+	x->type = LVAL_SEXPR;
+	return eval(x);
+}
+
+lval* builtin_join(lval* a)
+{
+	for (int i = 0; i < a->count; i++)
+	{
+		LVAL_ASSERT(a, (a->cell[i]->type == LVAL_QEXPR), LERR_JOIN_BAD_TYPE);
+	}
+
+	lval* x = _lval_pop(a, 0);
+
+	while (a->count) { x = _lval_join(x, _lval_pop(a, 0)); }
+
+	lval_del(a);
+	return x;
+}
+
 // private functions: //////////////////////////////////////////////////////////
 
 static lval* _lval_add(lval* v, lval* x)
@@ -146,14 +217,14 @@ static lval* _eval_sexpr(lval* v)
 
 	for (int i = 0; i < v->count; i++)
 	{
-		if (v->cell[i]->type == LVAL_ERR) { return _take_lval(v, i); }
+		if (v->cell[i]->type == LVAL_ERR) { return _lval_take(v, i); }
 	}
 
 	if (v->count == 0) { return v; }
-	if (v->count == 1) { return _take_lval(v, 0); }
+	if (v->count == 1) { return _lval_take(v, 0); }
 
 	// take the first element and make sure it's a symbol (op)
-	lval* f = _pop_lval(v, 0);
+	lval* f = _lval_pop(v, 0);
 	if (f->type != LVAL_SYM)
 	{
 		// log_err("First element must be a symbol, not of type %d", f->type);
@@ -161,12 +232,12 @@ static lval* _eval_sexpr(lval* v)
 		return _lval_err(LERR_BAD_SEXPR_START);
 	}
 
-	lval* result = builtin_op(v, f->sym);
+	lval* result = builtin(v, f->sym);
 	lval_del(f);
 	return result;
 }
 
-static lval* _pop_lval(lval* v, int i)
+static lval* _lval_pop(lval* v, int i)
 {
 	lval* x = v->cell[i];
 	memmove(&v->cell[i], &v->cell[i+1], sizeof(lval*)*(v->count-i-1));
@@ -177,9 +248,9 @@ static lval* _pop_lval(lval* v, int i)
 	return x;
 }
 
-static lval* _take_lval(lval* v, int i)
+static lval* _lval_take(lval* v, int i)
 {
-	lval* x = _pop_lval(v, i);
+	lval* x = _lval_pop(v, i);
 	lval_del(v);
 	return x;
 }
@@ -259,4 +330,11 @@ static lval* _lval_err(int e)
 	return v;
 }
 
+static lval* _lval_join(lval* x, lval* y)
+{
+	while (y->count) { x = _lval_add(x, _lval_pop(y, 0)); }
+
+	lval_del(y);
+	return x;
+}
 

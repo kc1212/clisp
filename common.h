@@ -24,15 +24,41 @@
 #define debug(M, ...) debug_to(stderr, M, __VA_ARGS__)
 
 enum lval_type {LVAL_LNG, LVAL_DBL, LVAL_SYM, LVAL_SEXPR, LVAL_QEXPR, LVAL_ERR}; // lval types
-enum lval_err {LERR_DIV_ZERO, LERR_BAD_OP, LERR_BAD_NUM, LERR_BAD_SEXPR_START, LERR_OTHER};
+enum lval_err {
+	LERR_DIV_ZERO,
+	LERR_BAD_OP,
+	LERR_BAD_NUM,
+	LERR_BAD_SEXPR_START,
+	LERR_BAD_FUNCTION,
+	LERR_HEAD_TOO_MANY_ARGS,
+	LERR_HEAD_BAD_TYPE,
+	LERR_HEAD_EMPTY,
+	LERR_TAIL_TOO_MANY_ARGS,
+	LERR_TAIL_BAD_TYPE,
+	LERR_TAIL_EMPTY,
+	LERR_EVAL_TOO_MANY_ARGS,
+	LERR_EVAL_BAD_TYPE,
+	LERR_JOIN_BAD_TYPE,
+	LERR_OTHER
+};
 
 static const char* const err_strings[] =
 {
 	"Error: Division By Zero!\n",
 	"Error: Invalid Operator!\n",
 	"Error: Invalid Number!\n",
-	"S-expression Does not start with symbol!\n"
-	"Critical Error!\n",
+	"S-expression Does not start with symbol!\n",
+	"Unknown Function!\n",
+	"Function 'head' passed too many arguments!\n",
+	"Function 'head' passed incorrect type!\n",
+	"Function 'head' passed {}!\n",
+	"Function 'tail' passed too many arguments!\n",
+	"Function 'tail' passed incorrect type!\n",
+	"Function 'tail' passed {}!\n",
+	"Function 'eval' passed too many arguments!\n",
+	"Function 'eval' passed incorrect type!\n",
+	"Function 'join' passed incorrect type.\n"
+	"Critical Error!\n"
 };
 
 typedef struct lval
