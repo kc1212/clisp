@@ -153,6 +153,7 @@ void test_empty_input()
 {
 	mpc_ast_t* ast = parse("  ");
 	assert(NULL == ast);
+	mpc_ast_delete(ast);
 }
 
 // void test_double_sexpr()
@@ -162,6 +163,41 @@ void test_empty_input()
 // 	lval_println(x);
 // 	// TODO
 // }
+
+void test_snprint_exprs_good()
+{
+	const int N = 13;
+	char output[N];
+
+	mpc_ast_t* ast = parse(" { (+ 1 2 3 ) }");
+	lval* v = ast_to_lval(ast);
+
+	int ret = lval_snprintln(v, output, N);
+	assert(0 <= ret);
+	assert(0 == strcmp("({(+ 1 2 3)})", output));
+
+	lval_del(v);
+	mpc_ast_delete(ast);
+
+}
+
+void test_snprint_exprs_bad()
+{
+	const int N = 12;
+	char output[N+1];
+	memset(output, 'z', sizeof(output));
+
+	mpc_ast_t* ast = parse(" { (+ 1 2 3 ) }");
+	lval* v = ast_to_lval(ast);
+
+	int ret = lval_snprintln(v, output, N);
+	assert(-1 == ret);
+	assert('z' == output[N]); // make sure last bit is not set
+
+	lval_del(v);
+	mpc_ast_delete(ast);
+
+}
 
 int main(void)
 {
@@ -193,6 +229,8 @@ int main(void)
 	run_test(test_div_zero);
 	run_test(test_div_zero_dbl);
 	run_test(test_empty_input);
+	run_test(test_snprint_exprs_good);
+	run_test(test_snprint_exprs_bad);
 	printf("Done\n");
 
 	fclose(logfp);
