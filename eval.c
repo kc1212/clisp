@@ -118,7 +118,7 @@ lval* builtin_op(lval* v, char* op)
 
 lval* ast_to_lval(mpc_ast_t* ast) // converts ast to lval
 {
-	if (!ast) { return _lval_err(LERR_OTHER); }
+	if (NULL == ast) { return _lval_err(LERR_OTHER); }
 
 	if (strstr(ast->tag, "long")) { return _lval_long(ast); }
 	else if (strstr(ast->tag, "double")) { return _lval_double(ast); }

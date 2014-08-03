@@ -80,6 +80,7 @@ FILE* errfp;
 
 void lval_del(lval* v);
 void lval_println(lval* v);
+int lval_snprintln(lval *v, char* str, const long n);
 
 #endif
 
