@@ -165,33 +165,73 @@ int test_empty_input()
 	return 0;
 }
 
-int test_snprint_exprs_good()
+int test_qexpr_list()
 {
-	const int N = 14;
+	const int N = 32;
 	char output[N];
 
+	STARTUP(ast, v, "eval {head (list 1 2 3 4)}");
+	TEST_ASSERT(lval_snprintln(v, output, N));
+	TEST_ASSERT(0 == strncmp("{1}", output, N));
+	TEARDOWN(ast, v);
+
+	return 0;
+}
+
+int test_qexpr_head()
+{
+	const int N = 32;
+	char output[N];
+
+	STARTUP(ast, v, "eval {head (head { {1 2} 3 4 })}");
+	TEST_ASSERT(lval_snprintln(v, output, N));
+	TEST_ASSERT(0 == strncmp("{{1 2}}", output, N));
+	TEARDOWN(ast, v);
+
+	return 0;
+}
+
+int test_qexpr_tail()
+{
+	const int N = 32;
+	char output[N];
+
+	STARTUP(ast, v, "eval (tail {tail tail {5 6 7}})");
+	TEST_ASSERT(lval_snprintln(v, output, N));
+	TEST_ASSERT(0 == strncmp("{6 7}", output, N));
+	TEARDOWN(ast, v);
+
+	return 0;
+}
+
+int test_snprint_exprs_good()
+{
+	const int N = 15;
+	char output[N];
+	memset(output, 'z', sizeof(output));
+
 	mpc_ast_t* ast = parse(" { (+ 1 2 3 ) }");
-	lval* v = ast_to_lval(ast);
+	lval* v = ast_to_lval(ast); // NOTE, no eval
 
 	int ret = lval_snprintln(v, output, N);
 	TEST_ASSERT(0 <= ret);
 	TEST_ASSERT(0 == strcmp("({(+ 1 2 3)})", output));
-	TEST_ASSERT('\0' == output[N-1]);
+	TEST_ASSERT('\0' == output[N-2]);
+	TEST_ASSERT('z' == output[N-1]);
 
-	lval_del(v);
-	mpc_ast_delete(ast);
+	TEARDOWN(ast, v);
 	return 0;
 
 }
 
 int test_snprint_exprs_bad()
 {
-	const int N = 13; // 12 characters + '\0'
-	char output[N+1];
+	const int N = 13;
+	char output[N];
 	memset(output, 'z', sizeof(output));
 
 	mpc_ast_t* ast = parse(" { (+ 1 2 3 ) }");
-	lval* v = ast_to_lval(ast);
+	lval* v = ast_to_lval(ast); // NOTE, no eval
 
 	int ret = lval_snprintln(v, output, N);
 	TEST_ASSERT(-1 == ret);
@@ -199,18 +239,6 @@ int test_snprint_exprs_bad()
 
 	TEARDOWN(ast, v);
 
-	return 0;
-}
-
-int test_qexprs()
-{
-	const int N = 16;
-	char output[N];
-
-	STARTUP(ast, v, "list 1 2 3 4");
-	TEST_ASSERT(lval_snprintln(v, output, N));
-	TEST_ASSERT(0 == strncmp("{1 2 3 4}", output, N));
-	TEARDOWN(ast, v);
 	return 0;
 }
 
@@ -229,9 +257,11 @@ int run_tests(void)
 	RUN_TEST(test_div_zero);
 	RUN_TEST(test_div_zero_dbl);
 	RUN_TEST(test_empty_input);
+	RUN_TEST(test_qexpr_list);
+	RUN_TEST(test_qexpr_head);
+	RUN_TEST(test_qexpr_tail);
 	RUN_TEST(test_snprint_exprs_good);
 	RUN_TEST(test_snprint_exprs_bad);
-	RUN_TEST(test_qexprs);
 	printf("Done\n");
 	return 0;
 }
