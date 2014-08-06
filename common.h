@@ -80,6 +80,9 @@ FILE* errfp;
 
 void lval_del(lval* v);
 void lval_println(lval* v);
+
+// TODO: this function sometimes returns -1 if the output is truncated,
+// this need to be fixed so be consistent with snprintf
 int lval_snprintln(lval *v, char* str, const long n);
 
 #endif

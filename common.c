@@ -55,7 +55,7 @@ static long _lval_expr_snprint(lval* v, const char open, const char close, char*
 
 	if (n < 1) { return -1; };
 
-	*str = open;
+	*str = open; *(str+1) = '\0';
 	tot++;
 
 	for (int i = 0; i < v->count; i++)
@@ -75,7 +75,7 @@ static long _lval_expr_snprint(lval* v, const char open, const char close, char*
 	}
 
 	if (n-tot < 1) { return -1; }
-	*(str+tot) = close;
+	*(str+tot) = close; *(str+tot+1) = '\0';
 	tot++;
 
 	return tot;
