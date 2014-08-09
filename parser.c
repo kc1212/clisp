@@ -29,8 +29,7 @@ void init_parser()
 	mpca_lang(MPCA_LANG_DEFAULT,
 		"long		: /-?\\d+/ ;"
 		"double		: /-?\\d*\\.\\d+|-?\\d+\\./ ;"
-		"symbol		: '+' | '-' | '*' | '/' | '%' | '^' | \"min\" | \"max\" | \
-					  \"list\" | \"head\" | \"tail\" | \"eval\" ;"
+		"symbol		: /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&\\^]+/ ; "
 		"sexpr		: '(' <expr>* ')' ;"
 		"qexpr		: '{' <expr>* '}' ;"
 		"expr		: <double> | <long> | <symbol> | <sexpr> | <qexpr> ;"

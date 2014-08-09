@@ -16,6 +16,9 @@
 #define LVAL_ASSERT(args, cond, err) \
 	if (!(cond)) { lval_del(args); return _lval_err(err); }
 
+#define LVAL_ASSERT_SYM(args, cond, err, sym) \
+	if (!(cond)) { lval_del(args); return _lval_err(err); }
+
 lval* ast_to_lval(mpc_ast_t* ast);
 lval* eval(lval* v);
 lval* builtin_op(lval* v, char* op);
@@ -24,7 +27,14 @@ lval* builtin_tail(lval* a);
 lval* builtin_eval(lval* a);
 lval* builtin_list(lval* a);
 lval* builtin_join(lval* a);
+lval* builtin_init(lval* a);
+lval* builtin_len(lval* a);
+lval* builtin_cons(lval* a);
 lval* builtin(lval* a, char* x);
+// TODO:
+// lval* builtin_cons(lval* a);
+// lval* builtin_len(lval* a);
+// lval* builtin_init(lval* a);
 
 #endif
 

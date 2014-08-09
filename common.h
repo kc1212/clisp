@@ -30,18 +30,14 @@ enum lval_err {
 	LERR_BAD_NUM,
 	LERR_BAD_SEXPR_START,
 	LERR_BAD_FUNCTION,
-	LERR_HEAD_TOO_MANY_ARGS,
-	LERR_HEAD_BAD_TYPE,
-	LERR_HEAD_EMPTY,
-	LERR_TAIL_TOO_MANY_ARGS,
-	LERR_TAIL_BAD_TYPE,
-	LERR_TAIL_EMPTY,
-	LERR_EVAL_TOO_MANY_ARGS,
-	LERR_EVAL_BAD_TYPE,
-	LERR_JOIN_BAD_TYPE,
+	LERR_TOO_MANY_ARGS,
+	LERR_BAD_ARGS_COUNT,
+	LERR_BAD_TYPE,
+	LERR_EMPTY,
 	LERR_OTHER
 };
 
+// TODO, need better way to output function names in error messages
 static const char* const err_strings[] =
 {
 	"Error: Division By Zero!\n",
@@ -49,30 +45,25 @@ static const char* const err_strings[] =
 	"Error: Invalid Number!\n",
 	"S-expression Does not start with symbol!\n",
 	"Unknown Function!\n",
-	"Function 'head' passed too many arguments!\n",
-	"Function 'head' passed incorrect type!\n",
-	"Function 'head' passed {}!\n",
-	"Function 'tail' passed too many arguments!\n",
-	"Function 'tail' passed incorrect type!\n",
-	"Function 'tail' passed {}!\n",
-	"Function 'eval' passed too many arguments!\n",
-	"Function 'eval' passed incorrect type!\n",
-	"Function 'join' passed incorrect type.\n"
+	"Function passed too many arguments!\n",
+	"Function passed wrong number of arguments!\n",
+	"Function passed incorrect type!\n",
+	"Function passed {}!\n",
 	"Critical Error!\n"
 };
 
 typedef struct lval
 {
 	int type;
-	int count;
+	int count; // of cells
 	int err;
-	char* sym; // op
 	union
 	{
 		int64_t lng;
 		double dbl;
 	} data;
 	struct lval** cell;
+	char* sym; // op
 } lval;
 
 FILE* logfp;

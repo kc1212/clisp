@@ -15,8 +15,10 @@ static lval* _lval_sexpr(void);
 static lval* _lval_qexpr(void);
 static lval* _lval_err(int e);
 static lval* _lval_add(lval* v, lval* x);
-static lval* _lval_long(mpc_ast_t* ast);
-static lval* _lval_double(mpc_ast_t* ast);
+static lval* _ast_to_long(mpc_ast_t* ast);
+static lval* _lval_long(int64_t x);
+static lval* _ast_to_double(mpc_ast_t* ast);
+static lval* _lval_double(double x);
 static lval* _lval_sym(const char sym[]);
 
 // public functions ////////////////////////////////////////////////////////////
@@ -28,11 +30,14 @@ lval* eval(lval* v)
 
 lval* builtin(lval* a, char* x)
 {
-	if (strcmp("list", x) == 0) { return builtin_list(a); }
-	if (strcmp("head", x) == 0) { return builtin_head(a); }
-	if (strcmp("tail", x) == 0) { return builtin_tail(a); }
-	if (strcmp("join", x) == 0) { return builtin_join(a); }
-	if (strcmp("eval", x) == 0) { return builtin_eval(a); }
+	if (0 == strcmp("list", x)) { return builtin_list(a); }
+	if (0 == strcmp("head", x)) { return builtin_head(a); }
+	if (0 == strcmp("tail", x)) { return builtin_tail(a); }
+	if (0 == strcmp("join", x)) { return builtin_join(a); }
+	if (0 == strcmp("eval", x)) { return builtin_eval(a); }
+	if (0 == strcmp("cons", x)) { return builtin_cons(a); }
+	if (0 == strcmp("len", x)) { return builtin_len(a); }
+	if (0 == strcmp("init", x)) { return builtin_init(a); }
 
 	if (strstr("^%+-/*", x) || strstr("min", x) || strstr("max", x) || strstr("pow", x))
 	{
@@ -120,8 +125,8 @@ lval* ast_to_lval(mpc_ast_t* ast) // converts ast to lval
 {
 	if (NULL == ast) { return _lval_err(LERR_OTHER); }
 
-	if (strstr(ast->tag, "long")) { return _lval_long(ast); }
-	else if (strstr(ast->tag, "double")) { return _lval_double(ast); }
+	if (strstr(ast->tag, "long")) { return _ast_to_long(ast); }
+	else if (strstr(ast->tag, "double")) { return _ast_to_double(ast); }
 	else if (strstr(ast->tag, "symbol")) { return _lval_sym(ast->contents); }
 
 	lval* x = NULL;   // ">" is root
@@ -145,9 +150,9 @@ lval* ast_to_lval(mpc_ast_t* ast) // converts ast to lval
 
 lval* builtin_head(lval* a)
 {
-	LVAL_ASSERT(a, (a->count == 1), LERR_HEAD_TOO_MANY_ARGS);
-	LVAL_ASSERT(a, (a->cell[0]->type == LVAL_QEXPR), LERR_HEAD_BAD_TYPE);
-	LVAL_ASSERT(a, (a->cell[0]->count != 0), LERR_HEAD_EMPTY);
+	LVAL_ASSERT(a, (a->count == 1), LERR_TOO_MANY_ARGS);
+	LVAL_ASSERT(a, (a->cell[0]->type == LVAL_QEXPR), LERR_BAD_TYPE);
+	LVAL_ASSERT(a, (a->cell[0]->count != 0), LERR_EMPTY);
 
 	lval* v = _lval_take(a, 0);
 	while (v->count > 1) { lval_del(_lval_pop(v, 1)); }
@@ -156,9 +161,9 @@ lval* builtin_head(lval* a)
 
 lval* builtin_tail(lval* a)
 {
-	LVAL_ASSERT(a, (a->count == 1), LERR_TAIL_TOO_MANY_ARGS);
-	LVAL_ASSERT(a, (a->cell[0]->type == LVAL_QEXPR), LERR_TAIL_BAD_TYPE);
-	LVAL_ASSERT(a, (a->cell[0]->count != 0), LERR_TAIL_EMPTY);
+	LVAL_ASSERT(a, (a->count == 1), LERR_TOO_MANY_ARGS);
+	LVAL_ASSERT(a, (a->cell[0]->type == LVAL_QEXPR), LERR_BAD_TYPE);
+	LVAL_ASSERT(a, (a->cell[0]->count != 0), LERR_EMPTY);
 
 	lval* v = _lval_take(a, 0);
 	lval_del(_lval_pop(v, 0));
@@ -173,8 +178,8 @@ lval* builtin_list(lval* a)
 
 lval* builtin_eval(lval* a)
 {
-	LVAL_ASSERT(a, (a->count == 1), LERR_EVAL_TOO_MANY_ARGS);
-	LVAL_ASSERT(a, (a->cell[0]->type == LVAL_QEXPR), LERR_EVAL_BAD_TYPE);
+	LVAL_ASSERT(a, (a->count == 1), LERR_TOO_MANY_ARGS);
+	LVAL_ASSERT(a, (a->cell[0]->type == LVAL_QEXPR), LERR_BAD_TYPE);
 
 	lval* x = _lval_take(a, 0);
 	x->type = LVAL_SEXPR;
@@ -185,7 +190,7 @@ lval* builtin_join(lval* a)
 {
 	for (int i = 0; i < a->count; i++)
 	{
-		LVAL_ASSERT(a, (a->cell[i]->type == LVAL_QEXPR), LERR_JOIN_BAD_TYPE);
+		LVAL_ASSERT(a, (a->cell[i]->type == LVAL_QEXPR), LERR_BAD_TYPE);
 	}
 
 	lval* x = _lval_pop(a, 0);
@@ -196,13 +201,44 @@ lval* builtin_join(lval* a)
 	return x;
 }
 
+// TODO doesn't work...
+lval* builtin_cons(lval* a)
+{
+	LVAL_ASSERT(a, (2 == a->count), LERR_BAD_ARGS_COUNT);
+	LVAL_ASSERT(a, (LVAL_QEXPR == a->cell[1]->type), LERR_BAD_TYPE);
+
+	lval* v = _lval_add(a->cell[0], a->cell[1]);
+	v->type = LVAL_QEXPR;
+	lval_del(a);
+	return v;
+}
+
+lval* builtin_len(lval* a)
+{
+	LVAL_ASSERT(a, (1 == a->count), LERR_TOO_MANY_ARGS);
+	LVAL_ASSERT(a, (LVAL_QEXPR == a->cell[0]->type), LERR_BAD_TYPE);
+
+	return _lval_long(a->cell[0]->count);
+}
+
+lval* builtin_init(lval* a)
+{
+	LVAL_ASSERT(a, (1 == a->count), LERR_TOO_MANY_ARGS);
+	LVAL_ASSERT(a, (LVAL_QEXPR == a->cell[0]->type), LERR_BAD_TYPE);
+	LVAL_ASSERT(a, (0 != a->cell[0]->count), LERR_EMPTY);
+
+	lval* v = _lval_take(a, 0); // take main qexpr
+	lval_del(_lval_pop(v, v->count-1));
+	return v;
+}
+
 // private functions: //////////////////////////////////////////////////////////
 
 static lval* _lval_add(lval* v, lval* x)
 {
 	v->count++;
 	v->cell = (lval**)realloc(v->cell, sizeof(lval*)*v->count);
-	assert(v->cell);
+	assert(v->cell); // TODO
 	v->cell[v->count-1] = x; // set the last element
 	return v;
 }
@@ -255,7 +291,7 @@ static lval* _lval_take(lval* v, int i)
 	return x;
 }
 
-static lval* _lval_long(mpc_ast_t* ast)
+static lval* _ast_to_long(mpc_ast_t* ast)
 {
 	errno = 0;
 	int64_t x = strtol(ast->contents, NULL, 10);
@@ -264,7 +300,11 @@ static lval* _lval_long(mpc_ast_t* ast)
 		// log_err("strtol conversion failed for %s", ast->contents);
 		return _lval_err(LERR_BAD_NUM);
 	}
+	return _lval_long(x);
+}
 
+static lval* _lval_long(int64_t x)
+{
 	lval* v = (lval*)calloc(1, sizeof(lval));
 	assert(v); // TODO need to improve
 	v->type = LVAL_LNG;
@@ -284,7 +324,7 @@ static lval* _lval_sym(const char sym[])
 }
 
 
-static lval* _lval_double(mpc_ast_t* ast)
+static lval* _ast_to_double(mpc_ast_t* ast)
 {
 	errno = 0;
 	double x = strtod(ast->contents, NULL);
@@ -293,7 +333,11 @@ static lval* _lval_double(mpc_ast_t* ast)
 		// log_err("strtod conversion failed for %s", ast->contents);
 		return _lval_err(LERR_BAD_NUM);
 	}
+	return _lval_double(x);
+}
 
+static lval* _lval_double(double x)
+{
 	lval* v = (lval*)calloc(1, sizeof(lval));
 	assert(v); // TODO need to improve
 	v->type = LVAL_DBL;
@@ -335,6 +379,6 @@ static lval* _lval_join(lval* x, lval* y)
 	while (y->count) { x = _lval_add(x, _lval_pop(y, 0)); }
 
 	lval_del(y);
-	return x;
+	return x; // x is reallocated so it's fine
 }
 
