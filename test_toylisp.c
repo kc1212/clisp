@@ -157,6 +157,15 @@ int test_div_zero_dbl()
 	return 0;
 }
 
+int test_unknown_function()
+{
+	STARTUP(ast, v, "asdf 1 2 3");
+	TEST_ASSERT(LVAL_ERR == v->type);
+	TEST_ASSERT(LERR_BAD_FUNCTION == v->err);
+	TEARDOWN(ast, v);
+	return 0;
+}
+
 int test_empty_input()
 {
 	mpc_ast_t* ast = parse("  ");
@@ -173,6 +182,7 @@ int test_qexpr_list()
 	STARTUP(ast, v, "eval {head (list 1 2 3 4)}");
 	TEST_ASSERT(lval_snprintln(v, output, N));
 	TEST_ASSERT(0 == strncmp("{1}", output, N));
+	TEST_ASSERT(LVAL_QEXPR == v->type);
 	TEARDOWN(ast, v);
 
 	return 0;
@@ -186,6 +196,7 @@ int test_qexpr_head()
 	STARTUP(ast, v, "eval {head (head { {1 2} 3 4 })}");
 	TEST_ASSERT(lval_snprintln(v, output, N));
 	TEST_ASSERT(0 == strncmp("{{1 2}}", output, N));
+	TEST_ASSERT(LVAL_QEXPR == v->type);
 	TEARDOWN(ast, v);
 
 	return 0;
@@ -199,8 +210,27 @@ int test_qexpr_tail()
 	STARTUP(ast, v, "eval (tail {tail tail {5 6 7}})");
 	TEST_ASSERT(lval_snprintln(v, output, N));
 	TEST_ASSERT(0 == strncmp("{6 7}", output, N));
+	TEST_ASSERT(LVAL_QEXPR == v->type);
 	TEARDOWN(ast, v);
 
+	return 0;
+}
+
+int test_qexpr_incorrect_type()
+{
+	// STARTUP(ast, v, "tail (+ 1 2)");
+	return 0;
+}
+
+int test_qexpr_empty()
+{
+	// STARTUP(ast, v, "tail {}");
+	return 0;
+}
+
+int test_qexpr_too_many_args()
+{
+	// STARTUP(ast, v, "tail {1 2} {3}");
 	return 0;
 }
 
@@ -257,6 +287,7 @@ int run_tests(void)
 	RUN_TEST(test_div_zero);
 	RUN_TEST(test_div_zero_dbl);
 	RUN_TEST(test_empty_input);
+	// RUN_TEST(test_unknown_function);
 	RUN_TEST(test_qexpr_list);
 	RUN_TEST(test_qexpr_head);
 	RUN_TEST(test_qexpr_tail);
