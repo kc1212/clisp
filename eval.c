@@ -14,7 +14,8 @@ static lval* _lval_join(lval* x, lval* y);
 static lval* _lval_sexpr(void);
 static lval* _lval_qexpr(void);
 static lval* _lval_err(int e);
-static lval* _lval_add(lval* v, lval* x);
+static lval* _lval_add_toback(lval* v, lval* x);
+static lval* _lval_add_tofront(lval*v, lval* x);
 static lval* _ast_to_long(mpc_ast_t* ast);
 static lval* _lval_long(int64_t x);
 static lval* _ast_to_double(mpc_ast_t* ast);
@@ -142,7 +143,7 @@ lval* ast_to_lval(mpc_ast_t* ast) // converts ast to lval
 			|| strcmp(ast->children[i]->contents, "{") == 0
 			|| strcmp(ast->children[i]->tag,  "regex") == 0
 			) { continue; }
-		x = _lval_add(x, ast_to_lval(ast->children[i]));
+		x = _lval_add_toback(x, ast_to_lval(ast->children[i]));
 	}
 
 	return x;
@@ -201,16 +202,15 @@ lval* builtin_join(lval* a)
 	return x;
 }
 
-// TODO doesn't work...
 lval* builtin_cons(lval* a)
 {
 	LVAL_ASSERT(a, (2 == a->count), LERR_BAD_ARGS_COUNT);
 	LVAL_ASSERT(a, (LVAL_QEXPR == a->cell[1]->type), LERR_BAD_TYPE);
 
-	lval* v = _lval_add(a->cell[0], a->cell[1]);
-	v->type = LVAL_QEXPR;
-	lval_del(a);
-	return v;
+	lval* item = _lval_pop(a, 0);
+	lval* list = _lval_take(a, 0); // take will free 'a'
+	list = _lval_add_tofront(list, item);
+	return list;
 }
 
 lval* builtin_len(lval* a)
@@ -234,12 +234,22 @@ lval* builtin_init(lval* a)
 
 // private functions: //////////////////////////////////////////////////////////
 
-static lval* _lval_add(lval* v, lval* x)
+static lval* _lval_add_toback(lval* v, lval* x)
 {
 	v->count++;
 	v->cell = (lval**)realloc(v->cell, sizeof(lval*)*v->count);
 	assert(v->cell); // TODO
 	v->cell[v->count-1] = x; // set the last element
+	return v;
+}
+
+static lval* _lval_add_tofront(lval*v, lval* x)
+{
+	v->count++;
+	v->cell = (lval**)realloc(v->cell, sizeof(lval*)*v->count);
+	assert(v->cell); // TODO
+	memmove(v->cell+1, v->cell, sizeof(lval*)*(v->count-1));
+	v->cell[0] = x;
 	return v;
 }
 
@@ -376,7 +386,7 @@ static lval* _lval_err(int e)
 
 static lval* _lval_join(lval* x, lval* y)
 {
-	while (y->count) { x = _lval_add(x, _lval_pop(y, 0)); }
+	while (y->count) { x = _lval_add_toback(x, _lval_pop(y, 0)); }
 
 	lval_del(y);
 	return x; // x is reallocated so it's fine

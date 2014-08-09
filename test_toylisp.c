@@ -216,6 +216,14 @@ int test_qexpr_tail()
 	return 0;
 }
 
+int test_qexpr_join()
+{
+	// STARTUP(ast, v, "join {1 2 3 } {1.1, 2.2 3.3}"
+	return 0;
+}
+
+// need cons len init tests...
+
 int test_qexpr_incorrect_type()
 {
 	// STARTUP(ast, v, "tail (+ 1 2)");
