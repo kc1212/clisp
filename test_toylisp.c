@@ -12,7 +12,7 @@
 	printf("%s", #fn_name);\
 	fprintf(logfp, "\n%s\n", #fn_name);\
 	fprintf(stderr, "\n%s\n", #fn_name);\
-	for (size_t i = 0; i < 26 - strlen(#fn_name); i++) printf(".");\
+	for (size_t i = 0; i < 42 - strlen(#fn_name); i++) printf(".");\
 	if (0 == fn_name()) { printf("OK\n"); } \
 	else { printf("FAIL!\n"); return 1; } \
 
@@ -28,7 +28,7 @@
 	lval* V = eval(ast_to_lval(AST))
 
 #define TEARDOWN(AST, V) \
-	lval_del(V); mpc_ast_delete(AST)
+	lval_del(V); mpc_ast_delete(AST); V = NULL; AST = NULL;
 
 
 int ast_size(mpc_ast_t* ast)
@@ -218,27 +218,92 @@ int test_qexpr_tail()
 
 int test_qexpr_join()
 {
-	// STARTUP(ast, v, "join {1 2 3 } {1.1, 2.2 3.3}"
+	const int N = 32;
+	char output[N];
+	STARTUP(ast, v, "join {1 2 3 } {4 5 6}");
+	TEST_ASSERT(lval_snprintln(v, output, N));
+	TEST_ASSERT(0 == strncmp("{1 2 3 4 5 6}", output, N));
+	TEST_ASSERT(LVAL_QEXPR == v->type);
+	TEARDOWN(ast, v);
 	return 0;
 }
 
-// need cons len init tests...
+int test_qexpr_init()
+{
+	const int N = 32;
+	char output[N];
+
+	STARTUP(ast, v, "init {1 2 z}");
+	TEST_ASSERT(lval_snprintln(v, output, N));
+	TEST_ASSERT(0 == strncmp("{1 2}", output, N));
+	TEST_ASSERT(LVAL_QEXPR == v->type);
+	TEARDOWN(ast, v);
+
+	return 0;
+}
+
+int test_qexpr_len()
+{
+	STARTUP(ast, v, "len {1 2 3.3 a b c}");
+	TEST_ASSERT(LVAL_LNG == v->type);
+	TEST_ASSERT(6 == v->data.lng);
+	TEARDOWN(ast, v);
+
+	return 0;
+}
+
+int test_qexpr_cons()
+{
+	//TODO there may b issue with cons
+	STARTUP(ast, v, "cons a {1 2 3}");
+	TEARDOWN(ast, v);
+	return 0;
+}
 
 int test_qexpr_incorrect_type()
 {
-	// STARTUP(ast, v, "tail (+ 1 2)");
+	STARTUP(ast, v, "tail (+ 1 2)");
+	TEST_ASSERT(LVAL_ERR == v->type);
+	TEST_ASSERT(LERR_BAD_TYPE == v->err);
+	TEARDOWN(ast, v);
 	return 0;
 }
 
 int test_qexpr_empty()
 {
-	// STARTUP(ast, v, "tail {}");
+	STARTUP(ast, v, "tail {}");
+	TEST_ASSERT(LVAL_ERR == v->type);
+	TEST_ASSERT(LERR_EMPTY == v->err);
+	TEARDOWN(ast, v);
 	return 0;
 }
 
 int test_qexpr_too_many_args()
 {
-	// STARTUP(ast, v, "tail {1 2} {3}");
+	STARTUP(ast, v, "tail {1 2} {3}");
+	TEST_ASSERT(LVAL_ERR == v->type);
+	TEST_ASSERT(LERR_TOO_MANY_ARGS == v->err);
+	TEARDOWN(ast, v);
+
+	STARTUP(ast1, v1, "head {1 2} {3}");
+	TEST_ASSERT(LVAL_ERR == v1->type);
+	TEST_ASSERT(LERR_TOO_MANY_ARGS == v1->err);
+	TEARDOWN(ast1, v1);
+
+	STARTUP(ast2, v2, "init {1 2} {3}");
+	TEST_ASSERT(LVAL_ERR == v2->type);
+	TEST_ASSERT(LERR_TOO_MANY_ARGS == v2->err);
+	TEARDOWN(ast2, v2);
+
+	return 0;
+}
+
+int test_qexpr_bad_args_count()
+{
+	STARTUP(ast, v, "cons {1 2}");
+	TEST_ASSERT(LVAL_ERR == v->type);
+	TEST_ASSERT(LERR_BAD_ARGS_COUNT == v->err);
+	TEARDOWN(ast, v);
 	return 0;
 }
 
@@ -299,6 +364,14 @@ int run_tests(void)
 	RUN_TEST(test_qexpr_list);
 	RUN_TEST(test_qexpr_head);
 	RUN_TEST(test_qexpr_tail);
+	RUN_TEST(test_qexpr_init);
+	RUN_TEST(test_qexpr_len);
+	RUN_TEST(test_qexpr_cons);
+	RUN_TEST(test_qexpr_join);
+	RUN_TEST(test_qexpr_incorrect_type);
+	RUN_TEST(test_qexpr_empty);
+	RUN_TEST(test_qexpr_too_many_args);
+	RUN_TEST(test_qexpr_bad_args_count);
 	RUN_TEST(test_snprint_exprs_good);
 	RUN_TEST(test_snprint_exprs_bad);
 	printf("Done\n");
