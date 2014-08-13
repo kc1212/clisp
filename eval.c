@@ -32,8 +32,8 @@ lval* eval(lval* v)
 lval* builtin(lval* a, char* x)
 {
 	if (0 == strcmp("list", x)) { return builtin_list(a); }
-	if (0 == strcmp("head", x)) { return builtin_head(a); }
-	if (0 == strcmp("tail", x)) { return builtin_tail(a); }
+	if (0 == strcmp("head", x) || 0 == strcmp("car", x)) { return builtin_head(a); }
+	if (0 == strcmp("tail", x) || 0 == strcmp("cdr", x)) { return builtin_tail(a); }
 	if (0 == strcmp("join", x)) { return builtin_join(a); }
 	if (0 == strcmp("eval", x)) { return builtin_eval(a); }
 	if (0 == strcmp("cons", x)) { return builtin_cons(a); }

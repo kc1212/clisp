@@ -48,10 +48,9 @@ static void _lval_expr_print(lval* v, const char open, const char close, FILE* f
 	putc(close, fp);
 }
 
-// TODO need to recalculate for '\0'
 static long _lval_expr_snprint(lval* v, const char open, const char close, char* str, const long n)
 {
-	long tot = 0; // total number of characters printed (copied) to str
+	long tot = 0; // total number of characters printed (copied) to str excluding '\0'
 	long ret = 0;
 
 	if (n < 2) { return tot; };

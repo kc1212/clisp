@@ -13,8 +13,8 @@
 	fprintf(logfp, "\n%s\n", #fn_name);\
 	fprintf(stderr, "\n%s\n", #fn_name);\
 	for (size_t i = 0; i < 42 - strlen(#fn_name); i++) printf(".");\
-	if (0 == fn_name()) { printf("OK\n"); } \
-	else { printf("FAIL!\n"); return 1; } \
+	if (0 == fn_name()) { printf("OK\n"); count++; } \
+	else { printf("\tFAIL! (%d tests completed)\n", count); return 1; } \
 
 #define TEST_ASSERT(expr) \
 	if (!(expr)) { \
@@ -188,7 +188,7 @@ int test_qexpr_list()
 	return 0;
 }
 
-int test_qexpr_head()
+int test_qexpr_head() // TODO also test car
 {
 	const int N = 32;
 	char output[N];
@@ -202,7 +202,7 @@ int test_qexpr_head()
 	return 0;
 }
 
-int test_qexpr_tail()
+int test_qexpr_tail() // TODO also test cdr
 {
 	const int N = 32;
 	char output[N];
@@ -254,8 +254,13 @@ int test_qexpr_len()
 
 int test_qexpr_cons()
 {
-	//TODO there may b issue with cons
+	const int N = 32;
+	char output[N];
+
 	STARTUP(ast, v, "cons a {1 2 3}");
+	TEST_ASSERT(lval_snprintln(v, output, N));
+	TEST_ASSERT(0 == strncmp("{a 1 2 3}", output, N));
+	TEST_ASSERT(LVAL_QEXPR == v->type);
 	TEARDOWN(ast, v);
 	return 0;
 }
@@ -266,6 +271,11 @@ int test_qexpr_incorrect_type()
 	TEST_ASSERT(LVAL_ERR == v->type);
 	TEST_ASSERT(LERR_BAD_TYPE == v->err);
 	TEARDOWN(ast, v);
+
+	STARTUP(ast1, v1, "cons {1 2} 3");
+	TEST_ASSERT(LVAL_ERR == v1->type);
+	TEST_ASSERT(LERR_BAD_TYPE == v1->err);
+	TEARDOWN(ast1, v1);
 	return 0;
 }
 
@@ -365,6 +375,7 @@ int test_snprint_exprs_bad2()
 
 int run_tests(void)
 {
+	int count = 0; // used in RUN_TEST macro
 	RUN_TEST(test_ast_type);
 	RUN_TEST(test_ast_failure);
 	RUN_TEST(test_eval_arithmetic);
@@ -393,7 +404,7 @@ int run_tests(void)
 	RUN_TEST(test_snprint_exprs_good);
 	RUN_TEST(test_snprint_exprs_bad);
 	RUN_TEST(test_snprint_exprs_bad2);
-	printf("Done\n");
+	printf("\tDone. (%d tests passed)\n", count);
 	return 0;
 }
 
