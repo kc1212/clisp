@@ -24,6 +24,7 @@ void lval_del(lval* v)
 		case LVAL_DBL:
 		case LVAL_LNG: break;
 		case LVAL_ERR: break;
+		case LVAL_FUN: break;
 		case LVAL_SYM: free(v->sym); break;
 
 		case LVAL_QEXPR:
@@ -33,6 +34,65 @@ void lval_del(lval* v)
 			break;
 	}
 	free(v);
+}
+
+lval* lval_copy(lval* v)
+{
+
+	lval* x = (lval*)malloc(sizeof(lval));
+	assert(x);
+	x->type = v->type;
+
+	switch (v->type)
+	{
+		case LVAL_FUN: x->fun = v->fun; break;
+		case LVAL_DBL: x->data.dbl = v->data.dbl; break;
+		case LVAL_LNG: x->data.lng = v->data.lng; break;
+		case LVAL_ERR: x->err = v->err; break;
+		case LVAL_SYM:
+			x->sym = (char*)malloc(strlen(v->sym) + 1);
+			strcpy(x->sym, v->sym);
+			break;
+
+		case LVAL_SEXPR:
+		case LVAL_QEXPR:
+			x->count = v->count;
+			x->cell = malloc(sizeof(lval*) * x->count);
+			for (int i = 0; i < x->count; i++)
+			{
+				x->cell[i] = lval_copy(v->cell[i]);
+			}
+			break;
+		default:
+			// something terrible happened
+			v->type = LVAL_ERR;
+			v->err = LERR_OTHER;
+			break;
+	}
+
+	return x;
+}
+
+lenv* lenv_new(void)
+{
+	lenv* e = (lenv*)malloc(sizeof(lenv));
+	if (NULL == e) { return NULL; }
+	e->count = 0;
+	e->syms = NULL;
+	e->vals = NULL;
+	return e;
+}
+
+void lenv_del(lenv* e)
+{
+	for (int i = 0; i < e->count; i++)
+	{
+		free(e->syms[i]);
+		lval_del(e->vals[i]);
+	}
+	free(e->syms);
+	free(e->vals);
+	free(e);
 }
 
 // private functions: //////////////////////////////////////////////////////////
@@ -93,6 +153,7 @@ static void _lval_print(lval* v, FILE *fp)
 		case LVAL_SYM:		fprintf(fp, "%s", v->sym);			break;
 		case LVAL_SEXPR:	_lval_expr_print(v, '(', ')', fp);	break;
 		case LVAL_QEXPR:	_lval_expr_print(v, '{', '}', fp);	break;
+		case LVAL_FUN:		fprintf(fp, "%s", "<function>");	break;
 		case LVAL_ERR:
 			fprintf(fp, "%s", err_strings[v->err]);
 			break;
@@ -112,10 +173,11 @@ static long _lval_snprint(lval* v, char* str, const long n)
 		case LVAL_LNG:		ret = snprintf(str, n, "%li", v->data.lng);	break;
 		case LVAL_DBL:		ret = snprintf(str, n, "%f", v->data.dbl);	break;
 		case LVAL_SYM:		ret = snprintf(str, n, "%s", v->sym);		break;
+		case LVAL_FUN:		ret = snprintf(str, n, "%s", "<function>");	break;
 		case LVAL_SEXPR:
 			ret = _lval_expr_snprint(v, '(', ')', str, n);
 			break;
-		case LVAL_QEXPR:
+		case LVAL_QEXPR: // TODO, change to use quote
 			ret = _lval_expr_snprint(v, '{', '}', str, n);
 			break;
 		case LVAL_ERR:

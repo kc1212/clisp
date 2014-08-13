@@ -31,7 +31,7 @@ void init_parser()
 		"double		: /-?\\d*\\.\\d+|-?\\d+\\./ ;"
 		"symbol		: /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&\\^]+/ ; "
 		"sexpr		: '(' <expr>* ')' ;"
-		"qexpr		: '{' <expr>* '}' ;"
+		"qexpr		: /'\\(/ <expr>* /\\)/ | /'/ <expr>* ;"
 		"expr		: <double> | <long> | <symbol> | <sexpr> | <qexpr> ;"
 		"lisp		: /^/ <expr>* /$/ ;",
 		Long, Double, Symbol, Sexpr, Qexpr, Expr, Lisp);

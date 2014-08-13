@@ -23,8 +23,20 @@
 #define log_info(M, ...) log_info_to(stderr, M, __VA_ARGS__)
 #define debug(M, ...) debug_to(stderr, M, __VA_ARGS__)
 
-enum lval_type {LVAL_LNG, LVAL_DBL, LVAL_SYM, LVAL_SEXPR, LVAL_QEXPR, LVAL_ERR}; // lval types
-enum lval_err {
+// constants
+enum lval_type
+{
+	LVAL_LNG,
+	LVAL_DBL,
+	LVAL_SYM,
+	LVAL_FUN,
+	LVAL_SEXPR,
+	LVAL_QEXPR,
+	LVAL_ERR
+};
+
+enum lval_err
+{
 	LERR_DIV_ZERO,
 	LERR_BAD_OP,
 	LERR_BAD_NUM,
@@ -52,7 +64,16 @@ static const char* const err_strings[] =
 	"Critical Error!\n"
 };
 
-typedef struct lval
+// forward declaration
+struct lval;
+struct lenv;
+typedef struct lval lval;
+typedef struct lenv lenv;
+
+// type declarations
+typedef lval*(*lbuiltin)(lenv*, lval*);
+
+struct lval
 {
 	int type;
 	int count; // of cells
@@ -62,15 +83,28 @@ typedef struct lval
 		int64_t lng;
 		double dbl;
 	} data;
-	struct lval** cell;
 	char* sym; // op
-} lval;
+	struct lval** cell;
+	lbuiltin fun;
+};
 
+struct lenv
+{
+	int count;
+	char** syms;
+	lval** vals;
+};
+
+// globals variables
 FILE* logfp;
 FILE* errfp;
 
+// global functions
 void lval_del(lval* v);
 void lval_println(lval* v);
+lval* lval_copy(lval* v);
+lenv* lenv_new(void);
+void lenv_del(lenv* e);
 
 // TODO: this function sometimes returns -1 if the output is truncated,
 // this need to be fixed so be consistent with snprintf

@@ -174,12 +174,13 @@ int test_empty_input()
 	return 0;
 }
 
-int test_qexpr_list()
+int test_qexpr_quote()
 {
 	const int N = 32;
 	char output[N];
 
-	STARTUP(ast, v, "eval {head (list 1 2 3 4)}");
+	// TODO need to be like scheme, i.e. (eval '(car (quote (1 2 3 4))))
+	STARTUP(ast, v, "eval '(car (quote 1 2 3 4))");
 	TEST_ASSERT(lval_snprintln(v, output, N));
 	TEST_ASSERT(0 == strncmp("{1}", output, N));
 	TEST_ASSERT(LVAL_QEXPR == v->type);
@@ -188,12 +189,12 @@ int test_qexpr_list()
 	return 0;
 }
 
-int test_qexpr_head() // TODO also test car
+int test_qexpr_head() // same as car
 {
 	const int N = 32;
 	char output[N];
 
-	STARTUP(ast, v, "eval {head (head { {1 2} 3 4 })}");
+	STARTUP(ast, v, "eval '(head (car '( '(1 2) 3 4 )))");
 	TEST_ASSERT(lval_snprintln(v, output, N));
 	TEST_ASSERT(0 == strncmp("{{1 2}}", output, N));
 	TEST_ASSERT(LVAL_QEXPR == v->type);
@@ -207,7 +208,7 @@ int test_qexpr_tail() // TODO also test cdr
 	const int N = 32;
 	char output[N];
 
-	STARTUP(ast, v, "eval (tail {tail tail {5 6 7}})");
+	STARTUP(ast, v, "eval (tail '(cdr tail '(5 6 7)))");
 	TEST_ASSERT(lval_snprintln(v, output, N));
 	TEST_ASSERT(0 == strncmp("{6 7}", output, N));
 	TEST_ASSERT(LVAL_QEXPR == v->type);
@@ -220,7 +221,7 @@ int test_qexpr_join()
 {
 	const int N = 32;
 	char output[N];
-	STARTUP(ast, v, "join {1 2 3 } {4 5 6}");
+	STARTUP(ast, v, "join '(1 2 3 ) '(4 5 6)");
 	TEST_ASSERT(lval_snprintln(v, output, N));
 	TEST_ASSERT(0 == strncmp("{1 2 3 4 5 6}", output, N));
 	TEST_ASSERT(LVAL_QEXPR == v->type);
@@ -233,7 +234,7 @@ int test_qexpr_init()
 	const int N = 32;
 	char output[N];
 
-	STARTUP(ast, v, "init {1 2 z}");
+	STARTUP(ast, v, "init '(1 2 z)");
 	TEST_ASSERT(lval_snprintln(v, output, N));
 	TEST_ASSERT(0 == strncmp("{1 2}", output, N));
 	TEST_ASSERT(LVAL_QEXPR == v->type);
@@ -244,7 +245,7 @@ int test_qexpr_init()
 
 int test_qexpr_len()
 {
-	STARTUP(ast, v, "len {1 2 3.3 a b c}");
+	STARTUP(ast, v, "len '(1 2 3.3 a b c)");
 	TEST_ASSERT(LVAL_LNG == v->type);
 	TEST_ASSERT(6 == v->data.lng);
 	TEARDOWN(ast, v);
@@ -257,7 +258,7 @@ int test_qexpr_cons()
 	const int N = 32;
 	char output[N];
 
-	STARTUP(ast, v, "cons a {1 2 3}");
+	STARTUP(ast, v, "cons a '(1 2 3)");
 	TEST_ASSERT(lval_snprintln(v, output, N));
 	TEST_ASSERT(0 == strncmp("{a 1 2 3}", output, N));
 	TEST_ASSERT(LVAL_QEXPR == v->type);
@@ -272,7 +273,7 @@ int test_qexpr_incorrect_type()
 	TEST_ASSERT(LERR_BAD_TYPE == v->err);
 	TEARDOWN(ast, v);
 
-	STARTUP(ast1, v1, "cons {1 2} 3");
+	STARTUP(ast1, v1, "cons '(1 2) 3");
 	TEST_ASSERT(LVAL_ERR == v1->type);
 	TEST_ASSERT(LERR_BAD_TYPE == v1->err);
 	TEARDOWN(ast1, v1);
@@ -281,7 +282,7 @@ int test_qexpr_incorrect_type()
 
 int test_qexpr_empty()
 {
-	STARTUP(ast, v, "tail {}");
+	STARTUP(ast, v, "cdr '()");
 	TEST_ASSERT(LVAL_ERR == v->type);
 	TEST_ASSERT(LERR_EMPTY == v->err);
 	TEARDOWN(ast, v);
@@ -290,17 +291,17 @@ int test_qexpr_empty()
 
 int test_qexpr_too_many_args()
 {
-	STARTUP(ast, v, "tail {1 2} {3}");
+	STARTUP(ast, v, "tail '(1 2) '(3)");
 	TEST_ASSERT(LVAL_ERR == v->type);
 	TEST_ASSERT(LERR_TOO_MANY_ARGS == v->err);
 	TEARDOWN(ast, v);
 
-	STARTUP(ast1, v1, "head {1 2} {3}");
+	STARTUP(ast1, v1, "head '(1 2) '(3)");
 	TEST_ASSERT(LVAL_ERR == v1->type);
 	TEST_ASSERT(LERR_TOO_MANY_ARGS == v1->err);
 	TEARDOWN(ast1, v1);
 
-	STARTUP(ast2, v2, "init {1 2} {3}");
+	STARTUP(ast2, v2, "init '(1 2) '(3)");
 	TEST_ASSERT(LVAL_ERR == v2->type);
 	TEST_ASSERT(LERR_TOO_MANY_ARGS == v2->err);
 	TEARDOWN(ast2, v2);
@@ -310,7 +311,7 @@ int test_qexpr_too_many_args()
 
 int test_qexpr_bad_args_count()
 {
-	STARTUP(ast, v, "cons {1 2}");
+	STARTUP(ast, v, "cons '(1 2)");
 	TEST_ASSERT(LVAL_ERR == v->type);
 	TEST_ASSERT(LERR_BAD_ARGS_COUNT == v->err);
 	TEARDOWN(ast, v);
@@ -323,7 +324,7 @@ int test_snprint_exprs_good()
 	char output[N];
 	memset(output, 'z', sizeof(output));
 
-	mpc_ast_t* ast = parse(" { (+ 1 2 3 ) }");
+	mpc_ast_t* ast = parse(" '( (+ 1 2 3 ) )");
 	lval* v = ast_to_lval(ast); // NOTE, no eval
 
 	int ret = lval_snprintln(v, output, N);
@@ -343,7 +344,7 @@ int test_snprint_exprs_bad()
 	char output[N];
 	memset(output, 'z', sizeof(output));
 
-	mpc_ast_t* ast = parse(" { (+ 1 2 3 ) }");
+	mpc_ast_t* ast = parse(" '( (+ 1 2 3 ) )");
 	lval* v = ast_to_lval(ast); // NOTE, no eval
 
 	int ret = lval_snprintln(v, output, N);
@@ -361,7 +362,7 @@ int test_snprint_exprs_bad2()
 	char output[N];
 	memset(output, 'z', sizeof(output));
 
-	mpc_ast_t* ast = parse(" { (+ 1 2 3 ) }");
+	mpc_ast_t* ast = parse(" '( (+ 1 2 3 ) )");
 	lval* v = ast_to_lval(ast); // NOTE, no eval
 
 	int ret = lval_snprintln(v, output, N);
@@ -390,7 +391,7 @@ int run_tests(void)
 	RUN_TEST(test_div_zero_dbl);
 	RUN_TEST(test_empty_input);
 	RUN_TEST(test_unknown_function);
-	RUN_TEST(test_qexpr_list);
+	RUN_TEST(test_qexpr_quote);
 	RUN_TEST(test_qexpr_head);
 	RUN_TEST(test_qexpr_tail);
 	RUN_TEST(test_qexpr_init);

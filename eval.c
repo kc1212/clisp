@@ -21,6 +21,7 @@ static lval* _lval_long(int64_t x);
 static lval* _ast_to_double(mpc_ast_t* ast);
 static lval* _lval_double(double x);
 static lval* _lval_sym(const char sym[]);
+static lval* _lval_fun(lbuiltin func);
 
 // public functions ////////////////////////////////////////////////////////////
 lval* eval(lval* v)
@@ -31,7 +32,7 @@ lval* eval(lval* v)
 
 lval* builtin(lval* a, char* x)
 {
-	if (0 == strcmp("list", x)) { return builtin_list(a); }
+	if (0 == strcmp("quote", x)) { return builtin_quote(a); }
 	if (0 == strcmp("head", x) || 0 == strcmp("car", x)) { return builtin_head(a); }
 	if (0 == strcmp("tail", x) || 0 == strcmp("cdr", x)) { return builtin_tail(a); }
 	if (0 == strcmp("join", x)) { return builtin_join(a); }
@@ -134,6 +135,7 @@ lval* ast_to_lval(mpc_ast_t* ast) // converts ast to lval
 	if (strcmp(ast->tag, ">") == 0 ) { x = _lval_sexpr(); }
 	else if (strstr(ast->tag, "sexpr")) { x = _lval_sexpr(); }
 	else if (strstr(ast->tag, "qexpr")) { x = _lval_qexpr(); }
+	assert(x); // TODO
 
 	for (int i = 0; i < ast->children_num; i++)
 	{
@@ -171,7 +173,7 @@ lval* builtin_tail(lval* a)
 	return v;
 }
 
-lval* builtin_list(lval* a)
+lval* builtin_quote(lval* a)
 {
 	a->type = LVAL_QEXPR;
 	return a;
@@ -238,7 +240,7 @@ static lval* _lval_add_toback(lval* v, lval* x)
 {
 	v->count++;
 	v->cell = (lval**)realloc(v->cell, sizeof(lval*)*v->count);
-	assert(v->cell); // TODO
+	if (NULL == v->cell) { return NULL; }
 	v->cell[v->count-1] = x; // set the last element
 	return v;
 }
@@ -247,7 +249,7 @@ static lval* _lval_add_tofront(lval*v, lval* x)
 {
 	v->count++;
 	v->cell = (lval**)realloc(v->cell, sizeof(lval*)*v->count);
-	assert(v->cell); // TODO
+	if (NULL == v->cell) { return NULL; }
 	memmove(v->cell+1, v->cell, sizeof(lval*)*(v->count-1));
 	v->cell[0] = x;
 	return v;
@@ -290,7 +292,7 @@ static lval* _lval_pop(lval* v, int i)
 
 	v->count--;
 	v->cell = (lval**)realloc(v->cell, sizeof(lval*)*v->count);
-	if (0 != v->count) { assert(v->cell); } // TODO
+	if (0 != v->count && NULL == v->cell ) { return NULL; }
 	return x;
 }
 
@@ -316,7 +318,7 @@ static lval* _ast_to_long(mpc_ast_t* ast)
 static lval* _lval_long(int64_t x)
 {
 	lval* v = (lval*)calloc(1, sizeof(lval));
-	assert(v); // TODO need to improve
+	if (NULL == v) { return NULL; }
 	v->type = LVAL_LNG;
 	v->data.lng = x;
 	return v;
@@ -325,14 +327,13 @@ static lval* _lval_long(int64_t x)
 static lval* _lval_sym(const char sym[])
 {
 	lval* v = (lval*)calloc(1, sizeof(lval));
-	assert(v);
+	if (NULL == v) { return NULL; }
 	v->type = LVAL_SYM;
 	v->sym = (char*)calloc(strlen(sym)+1, sizeof(char));
 	assert(v->sym);
 	strcpy(v->sym, sym);
 	return v;
 }
-
 
 static lval* _ast_to_double(mpc_ast_t* ast)
 {
@@ -349,7 +350,7 @@ static lval* _ast_to_double(mpc_ast_t* ast)
 static lval* _lval_double(double x)
 {
 	lval* v = (lval*)calloc(1, sizeof(lval));
-	assert(v); // TODO need to improve
+	if (NULL == v) { return NULL; }
 	v->type = LVAL_DBL;
 	v->data.dbl = x;
 	return v;
@@ -358,7 +359,7 @@ static lval* _lval_double(double x)
 static lval* _lval_sexpr(void)
 {
 	lval* v = (lval*)calloc(1, sizeof(lval));
-	assert(v); // TODO need to improve
+	if (NULL == v) { return NULL; }
 	v->type = LVAL_SEXPR;
 	v->count = 0;
 	v->cell = NULL;
@@ -368,17 +369,26 @@ static lval* _lval_sexpr(void)
 static lval* _lval_qexpr(void)
 {
 	lval* v = (lval*)malloc(sizeof(lval));
-	assert(v); // TODO
+	if (NULL == v) { return NULL; }
 	v->type = LVAL_QEXPR;
 	v->count = 0;
 	v->cell = NULL;
 	return v;
 }
 
+static lval* _lval_fun(lbuiltin func)
+{
+	lval* v = (lval*)malloc(sizeof(lval));
+	if (NULL == v) { return NULL; }
+	v->type = LVAL_FUN;
+	v->fun = func;
+	return v;
+}
+
 static lval* _lval_err(int e)
 {
 	lval* v = (lval*)calloc(1, sizeof(lval));
-	assert(v); // TODO need to improve
+	if (NULL == v) { return NULL; }
 	v->type = LVAL_ERR;
 	v->err = e;
 	return v;
