@@ -54,30 +54,33 @@ static long _lval_expr_snprint(lval* v, const char open, const char close, char*
 	long tot = 0; // total number of characters printed (copied) to str
 	long ret = 0;
 
-	if (n < 1) { return -1; };
+	if (n < 2) { return tot; };
 
-	*str = open; *(str+1) = '\0';
-	tot++;
+	ret = snprintf(str, 2, "%c", open);
+	tot += ret; // should be 1
 
 	for (int i = 0; i < v->count; i++)
 	{
-		if (n-tot < 1) { return -1; }
+		if (n-tot < 2) { return tot; }
+
 		ret = _lval_snprint(v->cell[i], str+tot, n-tot);
 		if (ret < 0) { return ret; }
 		tot += ret;
 
 		if (i != (v->count-1))
 		{
-			if (n-tot < 1) { return -1; }
+			if (n-tot < 2) { return tot; }
+
 			ret = snprintf(str+tot, n-tot, " ");
 			if (ret < 0) { return ret; }
 			tot += ret;
 		}
 	}
 
-	if (n-tot < 1) { return -1; }
-	*(str+tot) = close; *(str+tot+1) = '\0';
-	tot++;
+	if (n-tot < 2) { return tot; }
+
+	ret = snprintf(str+tot, 2, "%c", close);
+	tot += ret; // should be 0
 
 	return tot;
 }

@@ -337,8 +337,26 @@ int test_snprint_exprs_bad()
 	lval* v = ast_to_lval(ast); // NOTE, no eval
 
 	int ret = lval_snprintln(v, output, N);
-	TEST_ASSERT(-1 == ret);
-	TEST_ASSERT('z' == output[N]); // make sure last bit is not set
+	TEST_ASSERT(N-1 == ret);
+	TEST_ASSERT('\0' == output[N-1]); // need to be null terminated
+
+	TEARDOWN(ast, v);
+
+	return 0;
+}
+
+int test_snprint_exprs_bad2()
+{
+	const int N = 7;
+	char output[N];
+	memset(output, 'z', sizeof(output));
+
+	mpc_ast_t* ast = parse(" { (+ 1 2 3 ) }");
+	lval* v = ast_to_lval(ast); // NOTE, no eval
+
+	int ret = lval_snprintln(v, output, N);
+	TEST_ASSERT(N-1 == ret);
+	TEST_ASSERT('\0' == output[N-1]); // need to be null terminated
 
 	TEARDOWN(ast, v);
 
@@ -360,7 +378,7 @@ int run_tests(void)
 	RUN_TEST(test_div_zero);
 	RUN_TEST(test_div_zero_dbl);
 	RUN_TEST(test_empty_input);
-	// RUN_TEST(test_unknown_function);
+	RUN_TEST(test_unknown_function);
 	RUN_TEST(test_qexpr_list);
 	RUN_TEST(test_qexpr_head);
 	RUN_TEST(test_qexpr_tail);
@@ -374,6 +392,7 @@ int run_tests(void)
 	RUN_TEST(test_qexpr_bad_args_count);
 	RUN_TEST(test_snprint_exprs_good);
 	RUN_TEST(test_snprint_exprs_bad);
+	RUN_TEST(test_snprint_exprs_bad2);
 	printf("Done\n");
 	return 0;
 }
