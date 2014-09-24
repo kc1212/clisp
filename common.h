@@ -42,6 +42,7 @@ enum lval_err
 	LERR_BAD_NUM,
 	LERR_BAD_SEXPR_START,
 	LERR_BAD_FUNCTION,
+	LERR_BAD_SYMBOL,
 	LERR_TOO_MANY_ARGS,
 	LERR_BAD_ARGS_COUNT,
 	LERR_BAD_TYPE,
@@ -57,6 +58,7 @@ static const char* const err_strings[] =
 	"Error: Invalid Number!\n",
 	"S-expression Does not start with symbol!\n",
 	"Unknown Function!\n",
+	"Unknown Symbol!\n",
 	"Function passed too many arguments!\n",
 	"Function passed wrong number of arguments!\n",
 	"Function passed incorrect type!\n",
@@ -103,8 +105,6 @@ FILE* errfp;
 void lval_del(lval* v);
 void lval_println(lval* v);
 lval* lval_copy(lval* v);
-lenv* lenv_new(void);
-void lenv_del(lenv* e);
 
 // TODO: this function sometimes returns -1 if the output is truncated,
 // this need to be fixed so be consistent with snprintf

@@ -18,6 +18,7 @@ int main(void)
 
 	puts("toylist v0.0");
 	init_parser();
+	lenv* e = lenv_new();
 
 	for (;;)
 	{

@@ -4,6 +4,7 @@
 
 #include "mpc/mpc.h"
 #include "common.h"
+#include "envi.h"
 
 // assume lval.type cannot be error, only double or long
 #define GET_LVAL_DATA(LVAL) \
@@ -31,10 +32,14 @@ lval* builtin_init(lval* a);
 lval* builtin_len(lval* a);
 lval* builtin_cons(lval* a);
 lval* builtin(lval* a, char* x);
-// TODO:
-// lval* builtin_cons(lval* a);
-// lval* builtin_len(lval* a);
-// lval* builtin_init(lval* a);
+lval* builtin_add(lenv* e, lval* a);
+lval* builtin_sub(lenv* e, lval* a);
+lval* builtin_mul(lenv* e, lval* a);
+lval* builtin_div(lenv* e, lval* a);
+lval* builtin_mod(lenv* e, lval* a);
+lval* builtin_pow(lenv* e, lval* a);
+lval* builtin_min(lenv* e, lval* a);
+lval* builtin_max(lenv* e, lval* a);
 
 #endif
 

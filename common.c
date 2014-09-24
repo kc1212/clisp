@@ -73,28 +73,6 @@ lval* lval_copy(lval* v)
 	return x;
 }
 
-lenv* lenv_new(void)
-{
-	lenv* e = (lenv*)malloc(sizeof(lenv));
-	if (NULL == e) { return NULL; }
-	e->count = 0;
-	e->syms = NULL;
-	e->vals = NULL;
-	return e;
-}
-
-void lenv_del(lenv* e)
-{
-	for (int i = 0; i < e->count; i++)
-	{
-		free(e->syms[i]);
-		lval_del(e->vals[i]);
-	}
-	free(e->syms);
-	free(e->vals);
-	free(e);
-}
-
 // private functions: //////////////////////////////////////////////////////////
 
 static void _lval_expr_print(lval* v, const char open, const char close, FILE* fp)
