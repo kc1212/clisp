@@ -158,11 +158,11 @@ int test_div_zero_dbl()
 	return 0;
 }
 
-int test_unknown_function()
+int test_unknown_symbol()
 {
 	STARTUP(ast, v, "asdf 1 2 3");
 	TEST_ASSERT(LVAL_ERR == v->type);
-	TEST_ASSERT(LERR_BAD_FUNCTION == v->err);
+	TEST_ASSERT(LERR_BAD_SYMBOL == v->err);
 	TEARDOWN(ast, v);
 	return 0;
 }
@@ -172,6 +172,19 @@ int test_empty_input()
 	mpc_ast_t* ast = parse("  ");
 	TEST_ASSERT(NULL == ast);
 	mpc_ast_delete(ast);
+	return 0;
+}
+
+int test_qexpr_basic()
+{
+	const int N = 32;
+	char output[N];
+
+	STARTUP(ast, v, "'('a 'b)");
+	TEST_ASSERT(lval_snprintln(v, output, N));
+	TEST_ASSERT(0 == strncmp("{{a} {b}}", output, N));
+	TEARDOWN(ast, v);
+
 	return 0;
 }
 
@@ -222,11 +235,13 @@ int test_qexpr_join()
 {
 	const int N = 32;
 	char output[N];
+
 	STARTUP(ast, v, "join '(1 2 3 ) '(4 5 6)");
 	TEST_ASSERT(lval_snprintln(v, output, N));
 	TEST_ASSERT(0 == strncmp("{1 2 3 4 5 6}", output, N));
 	TEST_ASSERT(LVAL_QEXPR == v->type);
 	TEARDOWN(ast, v);
+
 	return 0;
 }
 
@@ -259,11 +274,32 @@ int test_qexpr_cons()
 	const int N = 32;
 	char output[N];
 
-	STARTUP(ast, v, "cons a '(1 2 3)");
+	STARTUP(ast, v, "cons 'a '(1 2 3)");
 	TEST_ASSERT(lval_snprintln(v, output, N));
 	TEST_ASSERT(0 == strncmp("{a 1 2 3}", output, N));
 	TEST_ASSERT(LVAL_QEXPR == v->type);
 	TEARDOWN(ast, v);
+
+	STARTUP(ast1, v1, "cons '(a b) '(1 2 3)");
+	TEST_ASSERT(lval_snprintln(v1, output, N));
+	TEST_ASSERT(0 == strncmp("{{a b} 1 2 3}", output, N));
+	TEST_ASSERT(LVAL_QEXPR == v1->type);
+	TEARDOWN(ast1, v1);
+
+	return 0;
+}
+
+int test_qexpr_cons2()
+{
+	const int N = 32;
+	char output[N];
+
+	STARTUP(ast, v, "cons '(a) (1 2 3)");
+	TEST_ASSERT(lval_snprintln(v, output, N));
+	TEST_ASSERT(0 == strncmp("{{a} 1 2 3}", output, N));
+	TEST_ASSERT(LVAL_QEXPR == v->type);
+	TEARDOWN(ast, v);
+
 	return 0;
 }
 
@@ -391,13 +427,15 @@ int run_tests(void)
 	RUN_TEST(test_div_zero);
 	RUN_TEST(test_div_zero_dbl);
 	RUN_TEST(test_empty_input);
-	RUN_TEST(test_unknown_function);
+	RUN_TEST(test_unknown_symbol);
+	RUN_TEST(test_qexpr_basic);
 	RUN_TEST(test_qexpr_quote);
 	RUN_TEST(test_qexpr_head);
 	RUN_TEST(test_qexpr_tail);
 	RUN_TEST(test_qexpr_init);
 	RUN_TEST(test_qexpr_len);
 	RUN_TEST(test_qexpr_cons);
+//	RUN_TEST(test_qexpr_cons2);
 	RUN_TEST(test_qexpr_join);
 	RUN_TEST(test_qexpr_incorrect_type);
 	RUN_TEST(test_qexpr_empty);

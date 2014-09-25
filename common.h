@@ -95,6 +95,7 @@ struct lenv
 	int count;
 	char** syms;
 	lval** vals;
+	int debug;
 };
 
 // globals variables

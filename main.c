@@ -44,6 +44,12 @@ int main(void)
 			break;
 		}
 
+		// perhaps put this into eval?
+		if (!strcmp(input, "debug 1"))
+			e->debug = 1;
+		else if (!strcmp(input, "debug 0"))
+			e->debug = 0;
+
 		mpc_ast_t* ast = parse(input);
 
 		if (!ast)

@@ -29,9 +29,10 @@ int init_parser()
 	mpca_lang(MPCA_LANG_DEFAULT,
 		"long		: /-?\\d+/ ;"
 		"double		: /-?\\d*\\.\\d+|-?\\d+\\./ ;"
+		// symbol can't have some special characters like ', ", {, (, etc
 		"symbol		: /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&\\^]+/ ; "
 		"sexpr		: '(' <expr>* ')' ;"
-		"qexpr		: /'\\(/ <expr>* /\\)/ | /'/ <expr>* ;"
+		"qexpr		: /'\\(/ <expr>* /\\)/ | /'/ <symbol>* ;"
 		"expr		: <double> | <long> | <symbol> | <sexpr> | <qexpr> ;"
 		"lisp		: /^/ <expr>* /$/ ;",
 		Long, Double, Symbol, Sexpr, Qexpr, Expr, Lisp);

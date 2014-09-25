@@ -8,6 +8,7 @@ lenv* lenv_new(void)
 	e->count = 0;
 	e->syms = NULL;
 	e->vals = NULL;
+	e->debug = 1;
 	return e;
 }
 
@@ -30,6 +31,8 @@ lval* lenv_get(lenv* e, lval* k)
 		if (strcmp(e->syms[i], k->sym) == 0)
 			return lval_copy(e->vals[i]);
 	}
+	if (e->debug)
+		debug("Symbol: '%s' not found.", k->sym);
 	return lval_err(LERR_BAD_SYMBOL);
 }
 

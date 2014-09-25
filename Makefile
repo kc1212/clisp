@@ -19,4 +19,7 @@ mpc.o: mpc/mpc.c
 clean:
 	rm -rf *.o $(TARGET)
 
+cleanlogs:
+	rm -rf logs/*
+
 

@@ -36,14 +36,18 @@ int init_env(lenv* e)
 	_add_builtin_to_env(e, "len",  builtin_len );
 	_add_builtin_to_env(e, "init", builtin_init);
 
-	_add_builtin_to_env(e, "add", builtin_add);
-	_add_builtin_to_env(e, "sub", builtin_sub);
-	_add_builtin_to_env(e, "mul", builtin_mul);
-	_add_builtin_to_env(e, "div", builtin_div);
-	_add_builtin_to_env(e, "mod", builtin_mod);
-	_add_builtin_to_env(e, "pow", builtin_pow);
+	_add_builtin_to_env(e, "+", builtin_add);
+	_add_builtin_to_env(e, "-", builtin_sub);
+	_add_builtin_to_env(e, "*", builtin_mul);
+	_add_builtin_to_env(e, "/", builtin_div);
+	_add_builtin_to_env(e, "%", builtin_mod);
+	_add_builtin_to_env(e, "^", builtin_pow);
 	_add_builtin_to_env(e, "min", builtin_min);
 	_add_builtin_to_env(e, "max", builtin_max);
+
+	// builtins under different name
+	_add_builtin_to_env(e, "car", builtin_head);
+	_add_builtin_to_env(e, "cdr", builtin_tail);
 
 	return 0; // TODO error checking
 }
@@ -57,37 +61,18 @@ lval* eval(lenv* e, lval* v)
 	}
 	if (v->type == LVAL_SEXPR)
 		return _eval_sexpr(e, v);
+
 	return v; // return same v if not sexpr
 }
 
-// lval* builtin(lval* a, char* x)
-// {
-// 	if (0 == strcmp("quote", x)) { return builtin_quote(a); }
-// 	if (0 == strcmp("head", x) || 0 == strcmp("car", x)) { return builtin_head(a); }
-// 	if (0 == strcmp("tail", x) || 0 == strcmp("cdr", x)) { return builtin_tail(a); }
-// 	if (0 == strcmp("join", x)) { return builtin_join(a); }
-// 	if (0 == strcmp("eval", x)) { return builtin_eval(a); }
-// 	if (0 == strcmp("cons", x)) { return builtin_cons(a); }
-// 	if (0 == strcmp("len", x)) { return builtin_len(a); }
-// 	if (0 == strcmp("init", x)) { return builtin_init(a); }
-// 
-// 	if (strstr("^%+-/*", x) || strstr("min", x) || strstr("max", x) || strstr("pow", x))
-// 	{
-// 		return builtin_op(a, x);
-// 	}
-// 
-// 	lval_del(a);
-// 	return _lval_err(LERR_BAD_FUNCTION);
-// }
-
 lval* builtin_op(lenv* e, lval* v, char* op)
 {
-	(void*)e;
 	for (int i = 0; i < v->count; i++) // ensure all children are numbers
 	{
 		if (v->cell[i]->type != LVAL_LNG && v->cell[i]->type != LVAL_DBL)
 		{
-			// log_err("not all children are numbers - type: %d", v->cell[i]->type);
+			if (e->debug)
+				debug("Not all children are numbers - type: %d", v->cell[i]->type);
 			lval_del(v);
 			return lval_err(LERR_BAD_NUM);
 		}
@@ -115,7 +100,10 @@ lval* builtin_op(lenv* e, lval* v, char* op)
 			{
 				if (DBL_EPSILON > y->data.dbl)
 				{
-					lval_del(x); lval_del(y); // v is deleted after while
+					if (e->debug)
+						debug("Division by zero! (%f/%f)", x->data.dbl, y->data.dbl);
+					lval_del(x);
+					lval_del(y); // v is deleted after while
 					x = lval_err(LERR_DIV_ZERO);
 					break;
 				}
@@ -136,6 +124,8 @@ lval* builtin_op(lenv* e, lval* v, char* op)
 			{
 				if (0 == y->data.lng)
 				{
+					if (e->debug)
+						debug("Division by zero! (%ld/%ld)", x->data.lng, y->data.lng);
 					lval_del(x); lval_del(y); // v is deleted after while
 					x = lval_err(LERR_DIV_ZERO);
 					break;
@@ -154,19 +144,28 @@ lval* builtin_op(lenv* e, lval* v, char* op)
 	return x;
 }
 
-lval* ast_to_lval(mpc_ast_t* ast) // converts ast to lval
+lval* ast_to_lval(mpc_ast_t* ast)
 {
-	if (NULL == ast) { return lval_err(LERR_OTHER); }
+	if (NULL == ast)
+		return lval_err(LERR_OTHER);
 
-	if (strstr(ast->tag, "long")) { return _ast_to_long(ast); }
-	else if (strstr(ast->tag, "double")) { return _ast_to_double(ast); }
-	else if (strstr(ast->tag, "symbol")) { return _lval_sym(ast->contents); }
+	if (strstr(ast->tag, "long"))
+		return _ast_to_long(ast);
+	else if (strstr(ast->tag, "double"))
+		return _ast_to_double(ast);
+	else if (strstr(ast->tag, "symbol"))
+		return _lval_sym(ast->contents);
 
-	lval* x = NULL;   // ">" is root
-	if (strcmp(ast->tag, ">") == 0 ) { x = _lval_sexpr(); }
-	else if (strstr(ast->tag, "sexpr")) { x = _lval_sexpr(); }
-	else if (strstr(ast->tag, "qexpr")) { x = _lval_qexpr(); }
-	assert(x); // TODO
+	lval* x = NULL; // ">" is root
+	if (0 == strcmp(ast->tag, ">"))
+		x = _lval_sexpr();
+	else if (strstr(ast->tag, "sexpr"))
+		x = _lval_sexpr();
+	else if (strstr(ast->tag, "qexpr"))
+		x = _lval_qexpr();
+
+	if (NULL == x)
+		return lval_err(LERR_OTHER);
 
 	for (int i = 0; i < ast->children_num; i++)
 	{
@@ -197,7 +196,8 @@ lval* builtin_head(lenv* e, lval* a)
 	LVAL_ASSERT(a, (a->cell[0]->count != 0), LERR_EMPTY);
 
 	lval* v = _lval_take(a, 0);
-	while (v->count > 1) { lval_del(_lval_pop(v, 1)); }
+	while (v->count > 1)
+		lval_del(_lval_pop(v, 1));
 	return v;
 }
 
@@ -253,6 +253,12 @@ lval* builtin_cons(lenv* e, lval* a)
 	LVAL_ASSERT(a, (LVAL_QEXPR == a->cell[1]->type), LERR_BAD_TYPE);
 
 	lval* item = _lval_pop(a, 0);
+
+	// !!! TODO this is not correct! if the user writes '(a) it'll be wrong!
+	// a better method is needed for parsing this type of input
+	if (item->count == 1)
+		item = _lval_pop(item, 0);
+
 	lval* list = _lval_take(a, 0); // take will free 'a'
 	list = _lval_add_tofront(list, item);
 	return list;
@@ -293,18 +299,22 @@ lval* builtin_max(lenv* e, lval* a) { return builtin_op(e, a, "max"); }
 
 static lval* _lval_add_toback(lval* v, lval* x)
 {
+	// TODO v and return value are the same
 	v->count++;
 	v->cell = (lval**)realloc(v->cell, sizeof(lval*)*v->count);
-	if (NULL == v->cell) { return NULL; }
+	if (NULL == v->cell)
+		return NULL;
 	v->cell[v->count-1] = x; // set the last element
 	return v;
 }
 
 static lval* _lval_add_tofront(lval*v, lval* x)
 {
+	// TODO v and return value are the same
 	v->count++;
 	v->cell = (lval**)realloc(v->cell, sizeof(lval*)*v->count);
-	if (NULL == v->cell) { return NULL; }
+	if (NULL == v->cell)
+		return NULL;
 	memmove(v->cell+1, v->cell, sizeof(lval*)*(v->count-1));
 	v->cell[0] = x;
 	return v;
@@ -314,24 +324,22 @@ static lval* _eval_sexpr(lenv* e, lval* v)
 {
 	// eval children
 	for (int i = 0; i < v->count; i++)
-	{
 		v->cell[i] = eval(e, v->cell[i]);
-	}
 
 	for (int i = 0; i < v->count; i++)
-	{
 		if (v->cell[i]->type == LVAL_ERR)
 			return _lval_take(v, i);
-	}
 
-	if (v->count == 0) { return v; }
-	if (v->count == 1) { return _lval_take(v, 0); }
+	if (v->count == 0)
+		return v;
+	if (v->count == 1)
+		return _lval_take(v, 0);
 
 	// take the first element and make sure it's a function
 	lval* f = _lval_pop(v, 0);
-	if (f->type != LVAL_FUN)
-	{
-		// log_err("First element must be a symbol, not of type %d", f->type);
+	if (f->type != LVAL_FUN) {
+		if (e->debug)
+			debug("First element must be a symbol, not of type %d", f->type);
 		lval_del(f); lval_del(v);
 		return lval_err(LERR_BAD_SEXPR_START);
 	}
@@ -348,7 +356,8 @@ static lval* _lval_pop(lval* v, int i)
 
 	v->count--;
 	v->cell = (lval**)realloc(v->cell, sizeof(lval*)*v->count);
-	if (0 != v->count && NULL == v->cell ) { return NULL; }
+	if (0 != v->count && NULL == v->cell )
+		return NULL;
 	return x;
 }
 
@@ -383,10 +392,12 @@ static lval* _lval_long(int64_t x)
 static lval* _lval_sym(const char sym[])
 {
 	lval* v = (lval*)calloc(1, sizeof(lval));
-	if (NULL == v) { return NULL; }
+	if (NULL == v)
+		return NULL;
 	v->type = LVAL_SYM;
 	v->sym = (char*)calloc(strlen(sym)+1, sizeof(char));
-	assert(v->sym);
+	if (NULL == v->sym)
+		return NULL;
 	strcpy(v->sym, sym);
 	return v;
 }
@@ -424,8 +435,9 @@ static lval* _lval_sexpr(void)
 
 static lval* _lval_qexpr(void)
 {
-	lval* v = (lval*)malloc(sizeof(lval));
-	if (NULL == v) { return NULL; }
+	lval* v = (lval*)calloc(1, sizeof(lval));
+	if (NULL == v)
+		return NULL;
 	v->type = LVAL_QEXPR;
 	v->count = 0;
 	v->cell = NULL;
@@ -443,19 +455,20 @@ static lval* _lval_fun(lbuiltin func)
 
 static lval* _lval_join(lval* x, lval* y)
 {
-	while (y->count) { x = _lval_add_toback(x, _lval_pop(y, 0)); }
+	while (y->count)
+		x = _lval_add_toback(x, _lval_pop(y, 0));
 
 	lval_del(y);
 	return x; // x is reallocated so it's fine
 }
-
 
 static int _add_builtin_to_env(lenv* e, char name[], lbuiltin func)
 {
 	lval* k = _lval_sym(name);
 	lval* v = _lval_fun(func);
 	lenv_put(e, k, v);
-	lval_del(k); lval_del(v);
+	lval_del(k);
+	lval_del(v);
 	return 0;
 }
 

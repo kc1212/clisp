@@ -14,14 +14,17 @@
 	if (LVAL_LNG == LVAL->type) \
 	{ LVAL->data.dbl = (double)LVAL->data.lng; LVAL->type = LVAL_DBL; }
 
+// TODO print debug info in assert
 #define LVAL_ASSERT(args, cond, err) \
 	if (!(cond)) { lval_del(args); return lval_err(err); }
 
+// TODO print debug info in assert
 #define LVAL_ASSERT_SYM(args, cond, err, sym) \
 	if (!(cond)) { lval_del(args); return lval_err(err); }
 
 lval* ast_to_lval(mpc_ast_t* ast);
 lval* eval(lenv* e, lval* v);
+int init_env(lenv* e);
 lval* builtin_op(lenv* e, lval* v, char* op);
 lval* builtin(lval* a, char* x);
 
