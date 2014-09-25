@@ -26,7 +26,6 @@ static int _add_builtin_to_env(lenv* e, char name[], lbuiltin func);
 // public functions ////////////////////////////////////////////////////////////
 int init_env(lenv* e)
 {
-	_add_builtin_to_env(e, "list", builtin_list);
 	_add_builtin_to_env(e, "quote", builtin_quote);
 	_add_builtin_to_env(e, "head", builtin_head);
 	_add_builtin_to_env(e, "tail", builtin_tail);
@@ -46,6 +45,7 @@ int init_env(lenv* e)
 	_add_builtin_to_env(e, "max", builtin_max);
 
 	// builtins under different name
+	_add_builtin_to_env(e, "list", builtin_quote);
 	_add_builtin_to_env(e, "car", builtin_head);
 	_add_builtin_to_env(e, "cdr", builtin_tail);
 
@@ -181,19 +181,11 @@ lval* ast_to_lval(mpc_ast_t* ast)
 	return x;
 }
 
-lval* builtin_list(lenv* e, lval* a)
-{
-	(void)e;
-	a->type = LVAL_QEXPR;
-	return a;
-}
-
 lval* builtin_head(lenv* e, lval* a)
 {
-	(void*)e;
-	LVAL_ASSERT(a, (a->count == 1), LERR_TOO_MANY_ARGS);
-	LVAL_ASSERT(a, (a->cell[0]->type == LVAL_QEXPR), LERR_BAD_TYPE);
-	LVAL_ASSERT(a, (a->cell[0]->count != 0), LERR_EMPTY);
+	LVAL_ASSERT(e, a, (a->count == 1), LERR_TOO_MANY_ARGS);
+	LVAL_ASSERT(e, a, (a->cell[0]->type == LVAL_QEXPR), LERR_BAD_TYPE);
+	LVAL_ASSERT(e, a, (a->cell[0]->count != 0), LERR_EMPTY);
 
 	lval* v = _lval_take(a, 0);
 	while (v->count > 1)
@@ -203,10 +195,9 @@ lval* builtin_head(lenv* e, lval* a)
 
 lval* builtin_tail(lenv* e, lval* a)
 {
-	(void*)e;
-	LVAL_ASSERT(a, (a->count == 1), LERR_TOO_MANY_ARGS);
-	LVAL_ASSERT(a, (a->cell[0]->type == LVAL_QEXPR), LERR_BAD_TYPE);
-	LVAL_ASSERT(a, (a->cell[0]->count != 0), LERR_EMPTY);
+	LVAL_ASSERT(e, a, (a->count == 1), LERR_TOO_MANY_ARGS);
+	LVAL_ASSERT(e, a, (a->cell[0]->type == LVAL_QEXPR), LERR_BAD_TYPE);
+	LVAL_ASSERT(e, a, (a->cell[0]->count != 0), LERR_EMPTY);
 
 	lval* v = _lval_take(a, 0);
 	lval_del(_lval_pop(v, 0));
@@ -222,8 +213,8 @@ lval* builtin_quote(lenv* e, lval* a)
 
 lval* builtin_eval(lenv* e, lval* a)
 {
-	LVAL_ASSERT(a, (a->count == 1), LERR_TOO_MANY_ARGS);
-	LVAL_ASSERT(a, (a->cell[0]->type == LVAL_QEXPR), LERR_BAD_TYPE);
+	LVAL_ASSERT(e, a, (a->count == 1), LERR_TOO_MANY_ARGS);
+	LVAL_ASSERT(e, a, (a->cell[0]->type == LVAL_QEXPR), LERR_BAD_TYPE);
 
 	lval* x = _lval_take(a, 0);
 	x->type = LVAL_SEXPR;
@@ -232,11 +223,8 @@ lval* builtin_eval(lenv* e, lval* a)
 
 lval* builtin_join(lenv* e, lval* a)
 {
-	(void*)e;
 	for (int i = 0; i < a->count; i++)
-	{
-		LVAL_ASSERT(a, (a->cell[i]->type == LVAL_QEXPR), LERR_BAD_TYPE);
-	}
+		LVAL_ASSERT(e, a, (a->cell[i]->type == LVAL_QEXPR), LERR_BAD_TYPE);
 
 	lval* x = _lval_pop(a, 0);
 
@@ -248,9 +236,8 @@ lval* builtin_join(lenv* e, lval* a)
 
 lval* builtin_cons(lenv* e, lval* a)
 {
-	(void*)e;
-	LVAL_ASSERT(a, (2 == a->count), LERR_BAD_ARGS_COUNT);
-	LVAL_ASSERT(a, (LVAL_QEXPR == a->cell[1]->type), LERR_BAD_TYPE);
+	LVAL_ASSERT(e, a, (2 == a->count), LERR_BAD_ARGS_COUNT);
+	LVAL_ASSERT(e, a, (LVAL_QEXPR == a->cell[1]->type), LERR_BAD_TYPE);
 
 	lval* item = _lval_pop(a, 0);
 
@@ -266,19 +253,17 @@ lval* builtin_cons(lenv* e, lval* a)
 
 lval* builtin_len(lenv* e, lval* a)
 {
-	(void*)e;
-	LVAL_ASSERT(a, (1 == a->count), LERR_TOO_MANY_ARGS);
-	LVAL_ASSERT(a, (LVAL_QEXPR == a->cell[0]->type), LERR_BAD_TYPE);
+	LVAL_ASSERT(e, a, (1 == a->count), LERR_TOO_MANY_ARGS);
+	LVAL_ASSERT(e, a, (LVAL_QEXPR == a->cell[0]->type), LERR_BAD_TYPE);
 
 	return _lval_long(a->cell[0]->count);
 }
 
 lval* builtin_init(lenv* e, lval* a)
 {
-	(void*)e;
-	LVAL_ASSERT(a, (1 == a->count), LERR_TOO_MANY_ARGS);
-	LVAL_ASSERT(a, (LVAL_QEXPR == a->cell[0]->type), LERR_BAD_TYPE);
-	LVAL_ASSERT(a, (0 != a->cell[0]->count), LERR_EMPTY);
+	LVAL_ASSERT(e, a, (1 == a->count), LERR_TOO_MANY_ARGS);
+	LVAL_ASSERT(e, a, (LVAL_QEXPR == a->cell[0]->type), LERR_BAD_TYPE);
+	LVAL_ASSERT(e, a, (0 != a->cell[0]->count), LERR_EMPTY);
 
 	lval* v = _lval_take(a, 0); // take main qexpr
 	lval_del(_lval_pop(v, v->count-1));
