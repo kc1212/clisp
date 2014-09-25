@@ -54,6 +54,7 @@ lval* builtin_mod(lenv* e, lval* a);
 lval* builtin_pow(lenv* e, lval* a);
 lval* builtin_min(lenv* e, lval* a);
 lval* builtin_max(lenv* e, lval* a);
+lval* builtin_def(lenv* e, lval* a);
 
 #endif
 

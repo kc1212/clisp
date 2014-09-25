@@ -38,17 +38,21 @@ int main(void)
 		char* input = readline("->> ");
 		add_history(input);
 
-		if (!strcmp(input, "quit"))
+		if (!strcmp(input, ":q"))
 		{
 			free(input);
 			break;
 		}
 
 		// perhaps put this into eval?
-		if (!strcmp(input, "debug 1"))
+		if (!strcmp(input, ":debug 1")) {
 			e->debug = 1;
-		else if (!strcmp(input, "debug 0"))
+			continue;
+		}
+		else if (!strcmp(input, ":debug 0")) {
 			e->debug = 0;
+			continue;
+		}
 
 		mpc_ast_t* ast = parse(input);
 

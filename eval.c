@@ -34,6 +34,7 @@ int init_env(lenv* e)
 	_add_builtin_to_env(e, "cons", builtin_cons);
 	_add_builtin_to_env(e, "len",  builtin_len );
 	_add_builtin_to_env(e, "init", builtin_init);
+	_add_builtin_to_env(e, "def",  builtin_def);
 
 	_add_builtin_to_env(e, "+", builtin_add);
 	_add_builtin_to_env(e, "-", builtin_sub);
@@ -268,6 +269,24 @@ lval* builtin_init(lenv* e, lval* a)
 	lval* v = _lval_take(a, 0); // take main qexpr
 	lval_del(_lval_pop(v, v->count-1));
 	return v;
+}
+
+lval* builtin_def(lenv* e, lval* a)
+{
+	LVAL_ASSERT(e, a, (a->cell[0]->type == LVAL_QEXPR), LERR_BAD_TYPE);
+
+	lval* syms = a->cell[0]; // first arg is symbol list
+
+	for (int i = 0; i < syms->count; i++)
+		LVAL_ASSERT(e, a, (syms->cell[i]->type == LVAL_SYM), LERR_BAD_TYPE);
+
+	LVAL_ASSERT(e, a, (syms->count == a->count-1), LERR_BAD_ARGS_COUNT);
+
+	for (int i = 0; i < syms->count; i++)
+		lenv_put(e, syms->cell[i], a->cell[i+1]);
+
+	lval_del(a);
+	return _lval_sexpr();
 }
 
 lval* builtin_add(lenv* e, lval* a) { return builtin_op(e, a, "+"); }
