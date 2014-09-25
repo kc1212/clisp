@@ -1,19 +1,18 @@
 
 #include "eval.h"
+#include "envi.h"
 #include "math.h"
 
 #include <string.h>
 #include <float.h>
 #include <assert.h>
 
-static lval* _eval_sexpr(lval* v);
-
+static lval* _eval_sexpr(lenv* e, lval* v);
 static lval* _lval_take(lval* v, int i);
 static lval* _lval_pop(lval* v, int i);
 static lval* _lval_join(lval* x, lval* y);
 static lval* _lval_sexpr(void);
 static lval* _lval_qexpr(void);
-static lval* _lval_err(int e);
 static lval* _lval_add_toback(lval* v, lval* x);
 static lval* _lval_add_tofront(lval*v, lval* x);
 static lval* _ast_to_long(mpc_ast_t* ast);
@@ -22,18 +21,33 @@ static lval* _ast_to_double(mpc_ast_t* ast);
 static lval* _lval_double(double x);
 static lval* _lval_sym(const char sym[]);
 static lval* _lval_fun(lbuiltin func);
+static int _add_builtin_to_env(lenv* e, char name[], lbuiltin func);
 
 // public functions ////////////////////////////////////////////////////////////
 int init_env(lenv* e)
 {
 	_add_builtin_to_env(e, "list", builtin_list);
-	_add_builtin_to_env(e, "quote", builtin_list);
-	_add_builtin_to_env(e, "head", builtin_list);
-	_add_builtin_to_env(e, "tail", builtin_list);
-	_add_builtin_to_env(e, "join", builtin_list);
-	_add_builtin_to_env(e, "", builtin_list);
+	_add_builtin_to_env(e, "quote", builtin_quote);
+	_add_builtin_to_env(e, "head", builtin_head);
+	_add_builtin_to_env(e, "tail", builtin_tail);
+	_add_builtin_to_env(e, "join", builtin_join);
+	_add_builtin_to_env(e, "eval", builtin_eval);
+	_add_builtin_to_env(e, "cons", builtin_cons);
+	_add_builtin_to_env(e, "len",  builtin_len );
+	_add_builtin_to_env(e, "init", builtin_init);
 
+	_add_builtin_to_env(e, "add", builtin_add);
+	_add_builtin_to_env(e, "sub", builtin_sub);
+	_add_builtin_to_env(e, "mul", builtin_mul);
+	_add_builtin_to_env(e, "div", builtin_div);
+	_add_builtin_to_env(e, "mod", builtin_mod);
+	_add_builtin_to_env(e, "pow", builtin_pow);
+	_add_builtin_to_env(e, "min", builtin_min);
+	_add_builtin_to_env(e, "max", builtin_max);
+
+	return 0; // TODO error checking
 }
+
 lval* eval(lenv* e, lval* v)
 {
 	if (v->type == LVAL_SYM) {
@@ -75,7 +89,7 @@ lval* builtin_op(lenv* e, lval* v, char* op)
 		{
 			// log_err("not all children are numbers - type: %d", v->cell[i]->type);
 			lval_del(v);
-			return _lval_err(LERR_BAD_NUM);
+			return lval_err(LERR_BAD_NUM);
 		}
 	}
 
@@ -102,7 +116,7 @@ lval* builtin_op(lenv* e, lval* v, char* op)
 				if (DBL_EPSILON > y->data.dbl)
 				{
 					lval_del(x); lval_del(y); // v is deleted after while
-					x = _lval_err(LERR_DIV_ZERO);
+					x = lval_err(LERR_DIV_ZERO);
 					break;
 				}
 				x->data.dbl /= y->data.dbl;
@@ -123,7 +137,7 @@ lval* builtin_op(lenv* e, lval* v, char* op)
 				if (0 == y->data.lng)
 				{
 					lval_del(x); lval_del(y); // v is deleted after while
-					x = _lval_err(LERR_DIV_ZERO);
+					x = lval_err(LERR_DIV_ZERO);
 					break;
 				}
 				x->data.lng /= y->data.lng;
@@ -142,7 +156,7 @@ lval* builtin_op(lenv* e, lval* v, char* op)
 
 lval* ast_to_lval(mpc_ast_t* ast) // converts ast to lval
 {
-	if (NULL == ast) { return _lval_err(LERR_OTHER); }
+	if (NULL == ast) { return lval_err(LERR_OTHER); }
 
 	if (strstr(ast->tag, "long")) { return _ast_to_long(ast); }
 	else if (strstr(ast->tag, "double")) { return _ast_to_double(ast); }
@@ -166,6 +180,13 @@ lval* ast_to_lval(mpc_ast_t* ast) // converts ast to lval
 	}
 
 	return x;
+}
+
+lval* builtin_list(lenv* e, lval* a)
+{
+	(void)e;
+	a->type = LVAL_QEXPR;
+	return a;
 }
 
 lval* builtin_head(lenv* e, lval* a)
@@ -294,7 +315,7 @@ static lval* _eval_sexpr(lenv* e, lval* v)
 	// eval children
 	for (int i = 0; i < v->count; i++)
 	{
-		v->cell[i] = eval(v->cell[i]);
+		v->cell[i] = eval(e, v->cell[i]);
 	}
 
 	for (int i = 0; i < v->count; i++)
@@ -312,7 +333,7 @@ static lval* _eval_sexpr(lenv* e, lval* v)
 	{
 		// log_err("First element must be a symbol, not of type %d", f->type);
 		lval_del(f); lval_del(v);
-		return _lval_err(LERR_BAD_SEXPR_START);
+		return lval_err(LERR_BAD_SEXPR_START);
 	}
 
 	lval* result = f->fun(e, v);
@@ -345,7 +366,7 @@ static lval* _ast_to_long(mpc_ast_t* ast)
 	if (errno)
 	{
 		// log_err("strtol conversion failed for %s", ast->contents);
-		return _lval_err(LERR_BAD_NUM);
+		return lval_err(LERR_BAD_NUM);
 	}
 	return _lval_long(x);
 }
@@ -377,7 +398,7 @@ static lval* _ast_to_double(mpc_ast_t* ast)
 	if (errno)
 	{
 		// log_err("strtod conversion failed for %s", ast->contents);
-		return _lval_err(LERR_BAD_NUM);
+		return lval_err(LERR_BAD_NUM);
 	}
 	return _lval_double(x);
 }
@@ -420,15 +441,6 @@ static lval* _lval_fun(lbuiltin func)
 	return v;
 }
 
-static lval* _lval_err(int e)
-{
-	lval* v = (lval*)calloc(1, sizeof(lval));
-	if (NULL == v) { return NULL; }
-	v->type = LVAL_ERR;
-	v->err = e;
-	return v;
-}
-
 static lval* _lval_join(lval* x, lval* y)
 {
 	while (y->count) { x = _lval_add_toback(x, _lval_pop(y, 0)); }
@@ -438,10 +450,10 @@ static lval* _lval_join(lval* x, lval* y)
 }
 
 
-int _add_builtin_to_env(lenv* e, char name[], lbuiltin func)
+static int _add_builtin_to_env(lenv* e, char name[], lbuiltin func)
 {
-	lval* k = lval_sym(name);
-	lval* v = lval_fun(func);
+	lval* k = _lval_sym(name);
+	lval* v = _lval_fun(func);
 	lenv_put(e, k, v);
 	lval_del(k); lval_del(v);
 	return 0;

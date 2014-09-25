@@ -25,11 +25,12 @@
 
 #define STARTUP(AST, V, STR) \
 	mpc_ast_t* AST = parse(STR); \
-	lval* V = eval(ast_to_lval(AST))
+	lval* V = eval(environment, ast_to_lval(AST))
 
 #define TEARDOWN(AST, V) \
 	lval_del(V); mpc_ast_delete(AST); V = NULL; AST = NULL;
 
+lenv* environment = NULL;
 
 int ast_size(mpc_ast_t* ast)
 {
@@ -426,6 +427,8 @@ int main(void)
 	}
 
 	init_parser();
+	environment = lenv_new();
+	init_env(environment);
 
 	int ret = run_tests();
 

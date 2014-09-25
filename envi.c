@@ -30,7 +30,7 @@ lval* lenv_get(lenv* e, lval* k)
 		if (strcmp(e->syms[i], k->sym) == 0)
 			return lval_copy(e->vals[i]);
 	}
-  return lval_err(LERR_BAD_SYMBOL);
+	return lval_err(LERR_BAD_SYMBOL);
 }
 
 int lenv_put(lenv* e, lval* k, lval* v) {
@@ -41,7 +41,7 @@ int lenv_put(lenv* e, lval* k, lval* v) {
 		{
 			lval_del(e->vals[i]);
 			e->vals[i] = lval_copy(v);
-			return;
+			return 0;
 		}
 	}
 

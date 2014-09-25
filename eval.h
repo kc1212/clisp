@@ -15,23 +15,25 @@
 	{ LVAL->data.dbl = (double)LVAL->data.lng; LVAL->type = LVAL_DBL; }
 
 #define LVAL_ASSERT(args, cond, err) \
-	if (!(cond)) { lval_del(args); return _lval_err(err); }
+	if (!(cond)) { lval_del(args); return lval_err(err); }
 
 #define LVAL_ASSERT_SYM(args, cond, err, sym) \
-	if (!(cond)) { lval_del(args); return _lval_err(err); }
+	if (!(cond)) { lval_del(args); return lval_err(err); }
 
 lval* ast_to_lval(mpc_ast_t* ast);
-lval* eval(lval* v);
-lval* builtin_op(lval* v, char* op);
-lval* builtin_head(lval* a);
-lval* builtin_tail(lval* a);
-lval* builtin_eval(lval* a);
-lval* builtin_quote(lval* a);
-lval* builtin_join(lval* a);
-lval* builtin_init(lval* a);
-lval* builtin_len(lval* a);
-lval* builtin_cons(lval* a);
+lval* eval(lenv* e, lval* v);
+lval* builtin_op(lenv* e, lval* v, char* op);
 lval* builtin(lval* a, char* x);
+
+lval* builtin_list(lenv* e, lval* a);
+lval* builtin_head(lenv* e, lval* a);
+lval* builtin_tail(lenv* e, lval* a);
+lval* builtin_eval(lenv* e, lval* a);
+lval* builtin_quote(lenv* e, lval* a);
+lval* builtin_join(lenv* e, lval* a);
+lval* builtin_init(lenv* e, lval* a);
+lval* builtin_len(lenv* e, lval* a);
+lval* builtin_cons(lenv* e, lval* a);
 lval* builtin_add(lenv* e, lval* a);
 lval* builtin_sub(lenv* e, lval* a);
 lval* builtin_mul(lenv* e, lval* a);

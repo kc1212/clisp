@@ -8,6 +8,7 @@
 
 int main(void)
 {
+	int ret = 0;
 	// TODO make this optional, i.e. parse argc argv
 	logfp = fopen(LOGFILE, "w+");
 	if (NULL == logfp)
@@ -16,9 +17,21 @@ int main(void)
 		return 1;
 	}
 
-	puts("toylist v0.0");
-	init_parser();
+	puts("toylist v0.1");
+	ret = init_parser();
+	if ( 0 != ret )
+		goto cleanup;
+
 	lenv* e = lenv_new();
+	if (NULL == e)
+	{
+		ret = 1;
+		goto cleanup;
+	}
+
+	ret = init_env(e);
+	if ( 0 != ret )
+		goto cleanup;
 
 	for (;;)
 	{
@@ -39,7 +52,7 @@ int main(void)
 			continue;
 		}
 
-		lval* x = eval(ast_to_lval(ast));
+		lval* x = eval(e, ast_to_lval(ast));
 		lval_println(x);
 		lval_del(x);
 
@@ -47,10 +60,11 @@ int main(void)
 		free(input);
 	}
 
+cleanup:
 	clear_history();
 	mpc_cleanup(7, Long, Double, Symbol, Qexpr, Sexpr, Expr, Lisp);
 	fclose(logfp);
-	return 0;
+	return ret;
 }
 
 

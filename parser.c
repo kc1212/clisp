@@ -16,7 +16,7 @@ static int all_isspace(const char* input)
 	return 0;
 }
 
-void init_parser()
+int init_parser()
 {
 	Long		= mpc_new("long");
 	Double		= mpc_new("double");
@@ -35,6 +35,7 @@ void init_parser()
 		"expr		: <double> | <long> | <symbol> | <sexpr> | <qexpr> ;"
 		"lisp		: /^/ <expr>* /$/ ;",
 		Long, Double, Symbol, Sexpr, Qexpr, Expr, Lisp);
+	return 0; // TODO error checking
 }
 
 // abstract syntax tree

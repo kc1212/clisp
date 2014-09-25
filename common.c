@@ -17,6 +17,15 @@ int lval_snprintln(lval *v, char* str, const long n)
 	return _lval_snprint(v, str, n);
 }
 
+lval* lval_err(enum LVAL_ERRS e)
+{
+	lval* v = (lval*)calloc(1, sizeof(lval));
+	if (NULL == v) { return NULL; }
+	v->type = LVAL_ERR;
+	v->err = e;
+	return v;
+}
+
 void lval_del(lval* v)
 {
 	switch (v->type)

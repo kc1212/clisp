@@ -24,7 +24,7 @@
 #define debug(M, ...) debug_to(stderr, M, __VA_ARGS__)
 
 // constants
-enum lval_type
+enum LVAL_TYPES
 {
 	LVAL_LNG,
 	LVAL_DBL,
@@ -35,7 +35,7 @@ enum lval_type
 	LVAL_ERR
 };
 
-enum lval_err
+enum LVAL_ERRS
 {
 	LERR_DIV_ZERO,
 	LERR_BAD_OP,
@@ -105,6 +105,7 @@ FILE* errfp;
 void lval_del(lval* v);
 void lval_println(lval* v);
 lval* lval_copy(lval* v);
+lval* lval_err(enum LVAL_ERRS e);
 
 // TODO: this function sometimes returns -1 if the output is truncated,
 // this need to be fixed so be consistent with snprintf
