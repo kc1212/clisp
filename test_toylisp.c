@@ -199,6 +199,12 @@ int test_qexpr_quote()
 	TEST_ASSERT(LVAL_QEXPR == v->type);
 	TEARDOWN(ast, v);
 
+//	STARTUP(ast1, v1, "quote a b");
+//	TEST_ASSERT(lval_snprintln(v1, output, N));
+//	TEST_ASSERT(0 == strncmp("{a b}", output, N));
+//	TEST_ASSERT(LVAL_QEXPR == v1->type);
+//	TEARDOWN(ast1, v1);
+
 	return 0;
 }
 
@@ -455,6 +461,7 @@ int main(void)
 
 	int ret = run_tests();
 
+	lenv_del(environment);
 	fclose(logfp);
 	fclose(errfp);
 	mpc_cleanup(7, Long, Double, Symbol, Qexpr, Sexpr, Expr, Lisp);

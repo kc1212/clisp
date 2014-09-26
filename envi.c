@@ -14,14 +14,23 @@ lenv* lenv_new(void)
 
 void lenv_del(lenv* e)
 {
-	for (int i = 0; i < e->count; i++)
+	for (int i = 0; i < e->count && NULL != e->syms[i]; i++)
 	{
 		free(e->syms[i]);
 		lval_del(e->vals[i]);
 	}
-	free(e->syms);
-	free(e->vals);
+	e->count = 0;
+
+	if (NULL != e->syms)
+		free(e->syms);
+	e->syms = NULL;
+
+	if (NULL != e->vals)
+		free(e->vals);
+	e->vals = NULL;
+
 	free(e);
+	e = NULL;
 }
 
 lval* lenv_get(lenv* e, lval* k)

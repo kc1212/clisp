@@ -31,7 +31,7 @@ int main(void)
 
 	ret = init_env(e);
 	if ( 0 != ret )
-		goto cleanup;
+		goto cleanup_env;
 
 	for (;;)
 	{
@@ -70,6 +70,8 @@ int main(void)
 		free(input);
 	}
 
+cleanup_env:
+	lenv_del(e);
 cleanup:
 	clear_history();
 	mpc_cleanup(7, Long, Double, Symbol, Qexpr, Sexpr, Expr, Lisp);

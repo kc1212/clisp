@@ -68,10 +68,8 @@ lval* eval(lenv* e, lval* v)
 
 lval* builtin_op(lenv* e, lval* v, char* op)
 {
-	for (int i = 0; i < v->count; i++) // ensure all children are numbers
-	{
-		if (v->cell[i]->type != LVAL_LNG && v->cell[i]->type != LVAL_DBL)
-		{
+	for (int i = 0; i < v->count; i++) { // ensure all children are numbers
+		if (v->cell[i]->type != LVAL_LNG && v->cell[i]->type != LVAL_DBL) {
 			if (e->debug)
 				debug("Not all children are numbers - type: %d", v->cell[i]->type);
 			lval_del(v);
@@ -80,27 +78,22 @@ lval* builtin_op(lenv* e, lval* v, char* op)
 	}
 
 	lval* x = _lval_pop(v, 0);
-	if ((strcmp(op, "-") == 0) && v->count == 0)
-	{
+	if ((strcmp(op, "-") == 0) && v->count == 0) {
 		if (LVAL_DBL == x->type) { x->data.dbl = -x->data.dbl; }
 		if (LVAL_LNG == x->type) { x->data.lng = -x->data.lng; }
 	}
 
-	while (v->count > 0)
-	{
+	while (v->count > 0) {
 		lval* y = _lval_pop(v, 0);
 
-		if (x->type == LVAL_DBL || y->type == LVAL_DBL)
-		{
+		if (x->type == LVAL_DBL || y->type == LVAL_DBL) {
 			TO_LVAL_DBL(x); TO_LVAL_DBL(y);
 			if (!strcmp(op, "+")) { x->data.dbl += y->data.dbl; }
 			if (!strcmp(op, "-")) { x->data.dbl -= y->data.dbl; }
 			if (!strcmp(op, "*")) { x->data.dbl *= y->data.dbl; }
 
-			if (!strcmp(op, "/"))
-			{
-				if (DBL_EPSILON > y->data.dbl)
-				{
+			if (!strcmp(op, "/")) {
+				if (DBL_EPSILON > y->data.dbl) {
 					if (e->debug)
 						debug("Division by zero! (%f/%f)", x->data.dbl, y->data.dbl);
 					lval_del(x);
@@ -115,16 +108,13 @@ lval* builtin_op(lenv* e, lval* v, char* op)
 			if (!strcmp(op, "min")) { x->data.dbl = MIN(x->data.dbl, y->data.dbl); }
 			if (!strcmp(op, "max")) { x->data.dbl = MAX(x->data.dbl, y->data.dbl); }
 		}
-		else
-		{
+		else {
 			if (!strcmp(op, "+")) { x->data.lng += y->data.lng; }
 			if (!strcmp(op, "-")) { x->data.lng -= y->data.lng; }
 			if (!strcmp(op, "*")) { x->data.lng *= y->data.lng; }
 
-			if (!strcmp(op, "/"))
-			{
-				if (0 == y->data.lng)
-				{
+			if (!strcmp(op, "/")) {
+				if (0 == y->data.lng) {
 					if (e->debug)
 						debug("Division by zero! (%ld/%ld)", x->data.lng, y->data.lng);
 					lval_del(x); lval_del(y); // v is deleted after while
@@ -242,10 +232,11 @@ lval* builtin_cons(lenv* e, lval* a)
 
 	lval* item = _lval_pop(a, 0);
 
-	// !!! TODO this is not correct! if the user writes '(a) it'll be wrong!
-	// a better method is needed for parsing this type of input
-	if (item->count == 1)
-		item = _lval_pop(item, 0);
+	// !!! TODO this may not be correct, if the user goes: cons {a} {1 2}
+	// do we return {a 1 2} or {{a} 1 2}?
+	if (item->count == 1) {
+		item = _lval_take(item, 0);
+	}
 
 	lval* list = _lval_take(a, 0); // take will free 'a'
 	list = _lval_add_tofront(list, item);
@@ -257,7 +248,9 @@ lval* builtin_len(lenv* e, lval* a)
 	LVAL_ASSERT(e, a, (1 == a->count), LERR_TOO_MANY_ARGS);
 	LVAL_ASSERT(e, a, (LVAL_QEXPR == a->cell[0]->type), LERR_BAD_TYPE);
 
-	return _lval_long(a->cell[0]->count);
+	lval* x = _lval_long(a->cell[0]->count);
+	lval_del(a);
+	return x;
 }
 
 lval* builtin_init(lenv* e, lval* a)
@@ -421,7 +414,8 @@ static lval* _ast_to_double(mpc_ast_t* ast)
 static lval* _lval_double(double x)
 {
 	lval* v = (lval*)calloc(1, sizeof(lval));
-	if (NULL == v) { return NULL; }
+	if (NULL == v)
+		return NULL;
 	v->type = LVAL_DBL;
 	v->data.dbl = x;
 	return v;
@@ -430,7 +424,8 @@ static lval* _lval_double(double x)
 static lval* _lval_sexpr(void)
 {
 	lval* v = (lval*)calloc(1, sizeof(lval));
-	if (NULL == v) { return NULL; }
+	if (NULL == v)
+		return NULL;
 	v->type = LVAL_SEXPR;
 	v->count = 0;
 	v->cell = NULL;
@@ -450,8 +445,9 @@ static lval* _lval_qexpr(void)
 
 static lval* _lval_fun(lbuiltin func)
 {
-	lval* v = (lval*)malloc(sizeof(lval));
-	if (NULL == v) return NULL;
+	lval* v = (lval*)calloc(1, sizeof(lval));
+	if (NULL == v)
+		return NULL;
 	v->type = LVAL_FUN;
 	v->fun = func;
 	return v;
