@@ -32,7 +32,7 @@ int init_parser()
 		// symbol can't have some special characters like ', ", {, (, etc
 		"symbol		: /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&\\^]+/ ; "
 		"sexpr		: '(' <expr>* ')' ;"
-		"qexpr		: /'\\(/ <expr>* /\\)/ | /'/ <symbol>* ;"
+		"qexpr		: '{' <expr>* '}' ;"
 		"expr		: <double> | <long> | <symbol> | <sexpr> | <qexpr> ;"
 		"lisp		: /^/ <expr>* /$/ ;",
 		Long, Double, Symbol, Sexpr, Qexpr, Expr, Lisp);
