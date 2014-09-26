@@ -27,6 +27,11 @@
 	mpc_ast_t* AST = parse(STR); \
 	lval* V = eval(environment, ast_to_lval(AST))
 
+// TODO need to check argument type
+#define STARTUP_NO_DECLARE(AST, V, STR) \
+	AST = parse(STR); \
+	V = eval(environment, ast_to_lval(AST))
+
 #define TEARDOWN(AST, V) \
 	lval_del(V); mpc_ast_delete(AST); V = NULL; AST = NULL;
 
@@ -199,11 +204,17 @@ int test_qexpr_quote()
 	TEST_ASSERT(LVAL_QEXPR == v->type);
 	TEARDOWN(ast, v);
 
-//	STARTUP(ast1, v1, "quote a b");
-//	TEST_ASSERT(lval_snprintln(v1, output, N));
-//	TEST_ASSERT(0 == strncmp("{a b}", output, N));
-//	TEST_ASSERT(LVAL_QEXPR == v1->type);
-//	TEARDOWN(ast1, v1);
+	STARTUP_NO_DECLARE(ast, v, "quote a b");
+	TEST_ASSERT(lval_snprintln(v, output, N));
+	TEST_ASSERT(0 == strncmp("{a b}", output, N));
+	TEST_ASSERT(LVAL_QEXPR == v->type);
+	TEARDOWN(ast, v);
+
+	STARTUP_NO_DECLARE(ast, v, "list a b (c d)");
+	TEST_ASSERT(lval_snprintln(v, output, N));
+	TEST_ASSERT(0 == strncmp("{a b (c d)}", output, N));
+	TEST_ASSERT(LVAL_QEXPR == v->type);
+	TEARDOWN(ast, v);
 
 	return 0;
 }
@@ -363,7 +374,6 @@ int test_snprint_exprs_good()
 
 	TEARDOWN(ast, v);
 	return 0;
-
 }
 
 int test_snprint_exprs_bad()
@@ -402,6 +412,53 @@ int test_snprint_exprs_bad2()
 	return 0;
 }
 
+int test_def()
+{
+	const int N = 32;
+	char output[N];
+
+	STARTUP(ast, v, "def {x} 100");
+	TEST_ASSERT(lval_snprintln(v, output, N));
+	TEST_ASSERT(0 == strncmp("()", output, N));
+	TEST_ASSERT(LVAL_SEXPR == v->type); // TODO better to return nothing
+	TEARDOWN(ast, v);
+
+	STARTUP_NO_DECLARE(ast, v, "x");
+	TEST_ASSERT(LVAL_LNG == v->type);
+	TEST_ASSERT(100 == v->data.lng);
+	TEARDOWN(ast, v);
+
+	STARTUP_NO_DECLARE(ast, v, "def {y} 200.0");
+	TEST_ASSERT(lval_snprintln(v, output, N));
+	TEST_ASSERT(0 == strncmp("()", output, N));
+	TEST_ASSERT(LVAL_SEXPR == v->type); // TODO better to return nothing
+	TEARDOWN(ast, v);
+
+	STARTUP_NO_DECLARE(ast, v, "y");
+	TEST_ASSERT(LVAL_DBL == v->type);
+	TEST_ASSERT(200.0 == v->data.dbl);
+	TEARDOWN(ast, v);
+
+	STARTUP_NO_DECLARE(ast, v, "+ x y");
+	TEST_ASSERT(LVAL_DBL == v->type);
+	TEST_ASSERT(300.0 == v->data.dbl);
+	TEARDOWN(ast, v);
+
+	STARTUP_NO_DECLARE(ast, v, "def {y} {tail {a b c}}");
+	TEST_ASSERT(lval_snprintln(v, output, N));
+	TEST_ASSERT(0 == strncmp("()", output, N));
+	TEST_ASSERT(LVAL_SEXPR == v->type); // TODO better to return nothing
+	TEARDOWN(ast, v);
+
+	STARTUP_NO_DECLARE(ast, v, "eval y"); // redefine y
+	TEST_ASSERT(lval_snprintln(v, output, N));
+	TEST_ASSERT(0 == strncmp("{b c}", output, N));
+	TEST_ASSERT(LVAL_QEXPR == v->type); // TODO better to return nothing
+	TEARDOWN(ast, v);
+
+	return 0;
+}
+
 int run_tests(void)
 {
 	int count = 0; // used in RUN_TEST macro
@@ -426,7 +483,6 @@ int run_tests(void)
 	RUN_TEST(test_qexpr_init);
 	RUN_TEST(test_qexpr_len);
 	RUN_TEST(test_qexpr_cons);
-//	RUN_TEST(test_qexpr_cons2);
 	RUN_TEST(test_qexpr_join);
 	RUN_TEST(test_qexpr_incorrect_type);
 	RUN_TEST(test_qexpr_empty);
@@ -435,6 +491,7 @@ int run_tests(void)
 	RUN_TEST(test_snprint_exprs_good);
 	RUN_TEST(test_snprint_exprs_bad);
 	RUN_TEST(test_snprint_exprs_bad2);
+	RUN_TEST(test_def);
 	printf("\tDone. (%d tests passed)\n", count);
 	return 0;
 }
@@ -459,6 +516,7 @@ int main(void)
 	environment = lenv_new();
 	init_env(environment);
 
+	// TODO a lot of these tests are functional tests rather than unit tests
 	int ret = run_tests();
 
 	lenv_del(environment);

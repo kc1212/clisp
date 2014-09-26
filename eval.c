@@ -319,13 +319,19 @@ static lval* _lval_add_tofront(lval*v, lval* x)
 
 static lval* _eval_sexpr(lenv* e, lval* v)
 {
-	// eval children
-	for (int i = 0; i < v->count; i++)
-		v->cell[i] = eval(e, v->cell[i]);
+	int is_qexpr = 0;
+	if (v->cell && v->cell[0] && v->cell[0]->sym)
+		is_qexpr = (0 == strncmp("quote", v->cell[0]->sym, 5))
+			|| (0 == strncmp("list", v->cell[0]->sym, 5));
+	// TODO change the above to regex
 
-	for (int i = 0; i < v->count; i++)
+	for (int i = 0; i < v->count; i++) {
+		// skip eval if the function is qexpr
+		if (!is_qexpr || 0 == i)
+			v->cell[i] = eval(e, v->cell[i]);
 		if (v->cell[i]->type == LVAL_ERR)
 			return _lval_take(v, i);
+	}
 
 	if (v->count == 0)
 		return v;
@@ -337,7 +343,8 @@ static lval* _eval_sexpr(lenv* e, lval* v)
 	if (f->type != LVAL_FUN) {
 		if (e->debug)
 			debug("First element must be a symbol, not of type %d", f->type);
-		lval_del(f); lval_del(v);
+		lval_del(f);
+		lval_del(v);
 		return lval_err(LERR_BAD_SEXPR_START);
 	}
 
