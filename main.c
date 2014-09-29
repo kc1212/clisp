@@ -5,6 +5,7 @@
 #include "common.h"
 #include "parser.h"
 #include "eval.h"
+#include "envi.h"
 
 int main(void)
 {
@@ -38,20 +39,14 @@ int main(void)
 		char* input = readline("->> ");
 		add_history(input);
 
-		if (!strcmp(input, ":q"))
-		{
+		int command = colon_commands(input, e);
+		if (COLON_CONTINUE == command) {
+			free(input);
+			continue;
+		}
+		else if (COLON_BREAK == command) {
 			free(input);
 			break;
-		}
-
-		// perhaps put this into eval?
-		if (!strcmp(input, ":debug 1")) {
-			e->debug = 1;
-			continue;
-		}
-		else if (!strcmp(input, ":debug 0")) {
-			e->debug = 0;
-			continue;
 		}
 
 		mpc_ast_t* ast = parse(input);

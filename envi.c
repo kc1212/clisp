@@ -35,8 +35,7 @@ void lenv_del(lenv* e)
 
 lval* lenv_get(lenv* e, lval* k)
 {
-	for (int i = 0; i < e->count; i++)
-	{
+	for (int i = 0; i < e->count; i++) {
 		if (strcmp(e->syms[i], k->sym) == 0)
 			return lval_copy(e->vals[i]);
 	}
@@ -47,10 +46,8 @@ lval* lenv_get(lenv* e, lval* k)
 
 int lenv_put(lenv* e, lval* k, lval* v) {
 
-	for (int i = 0; i < e->count; i++)
-	{
-		if (strcmp(e->syms[i], k->sym) == 0)
-		{
+	for (int i = 0; i < e->count; i++) {
+		if (strcmp(e->syms[i], k->sym) == 0) {
 			lval_del(e->vals[i]);
 			e->vals[i] = lval_copy(v);
 			return 0;
@@ -67,6 +64,4 @@ int lenv_put(lenv* e, lval* k, lval* v) {
 	strcpy(e->syms[e->count-1], k->sym);
 	return 0;
 }
-
-
 

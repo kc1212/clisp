@@ -322,7 +322,7 @@ static lval* _eval_sexpr(lenv* e, lval* v)
 	int is_qexpr = 0;
 	if (v->cell && v->cell[0] && v->cell[0]->sym)
 		is_qexpr = (0 == strncmp("quote", v->cell[0]->sym, 5))
-			|| (0 == strncmp("list", v->cell[0]->sym, 5));
+			|| (0 == strncmp("list", v->cell[0]->sym, 4));
 	// TODO change the above to regex
 
 	for (int i = 0; i < v->count; i++) {

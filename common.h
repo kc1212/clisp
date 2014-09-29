@@ -66,6 +66,13 @@ static const char* const err_strings[] =
 	"Critical Error!\n"
 };
 
+enum COLON_COMMAND_ACTION
+{
+	COLON_BREAK,
+	COLON_CONTINUE,
+	COLON_OTHER
+};
+
 // forward declaration
 struct lval;
 struct lenv;
@@ -107,6 +114,7 @@ void lval_del(lval* v);
 void lval_println(lval* v);
 lval* lval_copy(lval* v);
 lval* lval_err(enum LVAL_ERRS e);
+int colon_commands(const char* input, lenv* e);
 
 // TODO: this function sometimes returns -1 if the output is truncated,
 // this need to be fixed so be consistent with snprintf

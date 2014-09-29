@@ -6,6 +6,8 @@ static void _lval_expr_print(lval* v, const char open, const char close, FILE* f
 static long _lval_expr_snprint(lval* v, const char open, const char close, char* str, const long n);
 static void _lval_print(lval* v, FILE *fp);
 static long _lval_snprint(lval* v, char* str, const long n);
+int _lenv_print(lenv* e);
+int _lenv_fprint(lenv* e, FILE* f);
 
 void lval_println(lval* v)
 {
@@ -82,6 +84,34 @@ lval* lval_copy(lval* v)
 	return x;
 }
 
+int colon_commands(const char* input, lenv* e)
+{
+	int action = COLON_OTHER;
+
+	if (!strncmp(input, ":q", 2)) {
+		action = COLON_BREAK;
+
+	}
+	else if (!strncmp(input, ":debug", 6)) {
+		if (!strncmp(input+6, " true", 5)) {
+			e->debug = 1;
+			printf("debug mode on\n");
+		}
+		else if (!strncmp(input+6, " false", 6)) {
+			e->debug = 0;
+			printf("debug mode off\n");
+		}
+		else // TODO we can improve error reporting, maybe
+			printf("ERROR: valid options are 'true' or 'false'\n");
+		action = COLON_CONTINUE;
+	}
+	else if (!strncmp(input, ":env", 4)) {
+		_lenv_print(e);
+		action = COLON_CONTINUE;
+	}
+	return action;
+}
+
 // private functions: //////////////////////////////////////////////////////////
 
 static void _lval_expr_print(lval* v, const char open, const char close, FILE* fp)
@@ -136,8 +166,8 @@ static void _lval_print(lval* v, FILE *fp)
 	switch (v->type)
 	{
 		case LVAL_LNG:		fprintf(fp, "%li", v->data.lng);	break;
-		case LVAL_DBL:		fprintf(fp, "%f", v->data.dbl);		break;
-		case LVAL_SYM:		fprintf(fp, "%s", v->sym);			break;
+		case LVAL_DBL:		fprintf(fp, "%f", v->data.dbl);	break;
+		case LVAL_SYM:		fprintf(fp, "%s", v->sym);	break;
 		case LVAL_SEXPR:	_lval_expr_print(v, '(', ')', fp);	break;
 		case LVAL_QEXPR:	_lval_expr_print(v, '{', '}', fp);	break;
 		case LVAL_FUN:		fprintf(fp, "%s", "<function>");	break;
@@ -177,5 +207,21 @@ static long _lval_snprint(lval* v, char* str, const long n)
 	return ret;
 }
 
+
+int _lenv_print(lenv* e)
+{
+	_lenv_fprint(e, stdout);
+	return 0;
+}
+
+int _lenv_fprint(lenv* e, FILE* f)
+{
+	int i = 0;
+	for (; i < e->count-1; i++) {
+		fprintf(f, "%s ", e->syms[i]);
+	}
+	fprintf(f, "%s\n", e->syms[i]);
+	return 0;
+}
 
 
