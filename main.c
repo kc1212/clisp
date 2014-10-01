@@ -5,7 +5,6 @@
 #include "common.h"
 #include "parser.h"
 #include "eval.h"
-#include "envi.h"
 
 int main(void)
 {

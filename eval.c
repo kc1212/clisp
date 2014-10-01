@@ -1,8 +1,7 @@
 
 #include "eval.h"
-#include "envi.h"
-#include "math.h"
 
+#include <math.h>
 #include <string.h>
 #include <float.h>
 #include <assert.h>
@@ -21,6 +20,7 @@ static lval* _ast_to_double(mpc_ast_t* ast);
 static lval* _lval_double(double x);
 static lval* _lval_sym(const char sym[]);
 static lval* _lval_fun(lbuiltin func);
+static lval* _lval_lambda(lval* formals, lval* body);
 static int _add_builtin_to_env(lenv* e, char name[], lbuiltin func);
 
 // public functions ////////////////////////////////////////////////////////////
@@ -280,6 +280,27 @@ lval* builtin_def(lenv* e, lval* a)
 
 	lval_del(a);
 	return _lval_sexpr();
+
+}
+
+lval* builtin_lambda(lenv* e, lval* a)
+{
+	LVAL_ASSERT(e, a, (a->cell[0]->count == 2), LERR_BAD_ARGS_COUNT);
+	LVAL_ASSERT(e, a, (a->cell[0]->type == LVAL_QEXPR), LERR_BAD_TYPE);
+	LVAL_ASSERT(e, a, (a->cell[1]->type == LVAL_QEXPR), LERR_BAD_TYPE);
+
+	for (int i = 0; i < a->cell[0]->count; i++) {
+//		LASSERT(e, a, (a->cell[0]->cell[i]->type == LVAL_SYM),
+//				"Cannot define non-symbol. Got %s, Expected %s.",
+//				ltype_name(a->cell[0]->cell[i]->type), ltype_name(LVAL_SYM));
+	}
+
+	// pop first two arguments and pass them to lval_lambda */
+	lval* formals = _lval_pop(a, 0);
+	lval* body = _lval_pop(a, 0);
+	lval_del(a);
+
+	return _lval_lambda(formals, body);
 }
 
 lval* builtin_add(lenv* e, lval* a) { return builtin_op(e, a, "+"); }
@@ -293,6 +314,16 @@ lval* builtin_max(lenv* e, lval* a) { return builtin_op(e, a, "max"); }
 
 
 // private functions: //////////////////////////////////////////////////////////
+
+static lval* _lval_lambda(lval* formals, lval* body) {
+	lval* v = calloc(1, sizeof(lval));
+	v->type = LVAL_FUN;
+	v->builtin = NULL;
+	v->env = lenv_new();
+	v->formals = formals;
+	v->body = body;
+	return v;
+}
 
 static lval* _lval_add_toback(lval* v, lval* x)
 {
@@ -348,7 +379,7 @@ static lval* _eval_sexpr(lenv* e, lval* v)
 		return lval_err(LERR_BAD_SEXPR_START);
 	}
 
-	lval* result = f->fun(e, v);
+	lval* result = f->builtin(e, v);
 	lval_del(f);
 	return result;
 }
@@ -456,7 +487,7 @@ static lval* _lval_fun(lbuiltin func)
 	if (NULL == v)
 		return NULL;
 	v->type = LVAL_FUN;
-	v->fun = func;
+	v->builtin = func;
 	return v;
 }
 

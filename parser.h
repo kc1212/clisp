@@ -1,6 +1,7 @@
 #ifndef PARSER_H_
 #define PARSER_H_
 
+// TODO might be better to write parser from scratch
 #include "mpc/mpc.h"
 
 mpc_parser_t* Long;

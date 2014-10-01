@@ -93,8 +93,12 @@ struct lval
 		double dbl;
 	} data;
 	char* sym; // op
-	struct lval** cell;
-	lbuiltin fun;
+	lval** cell;
+
+	lbuiltin builtin;
+	lenv* env;
+	lval* formals;
+	lval* body;
 };
 
 struct lenv
@@ -102,6 +106,7 @@ struct lenv
 	int count;
 	char** syms;
 	lval** vals;
+	lenv* par; // parent
 	int debug;
 };
 
@@ -109,11 +114,20 @@ struct lenv
 FILE* logfp;
 FILE* errfp;
 
-// global functions
+// lval global functions
 void lval_del(lval* v);
 void lval_println(lval* v);
 lval* lval_copy(lval* v);
 lval* lval_err(enum LVAL_ERRS e);
+
+// lenv global functions
+lenv* lenv_new(void);
+void lenv_del(lenv* e);
+lval* lenv_get(lenv* e, lval* k);
+int lenv_put(lenv* e, lval* k, lval* v);
+lenv* lenv_copy(lenv* e);
+
+// others
 int colon_commands(const char* input, lenv* e);
 
 // TODO: this function sometimes returns -1 if the output is truncated,

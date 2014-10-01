@@ -4,7 +4,6 @@
 
 #include "mpc/mpc.h"
 #include "common.h"
-#include "envi.h"
 
 // assume lval.type cannot be error, only double or long
 #define GET_LVAL_NUM_TYPE(LVAL) \
@@ -16,7 +15,7 @@
 		LVAL->type = LVAL_DBL; \
 	}
 
-// TODO print debug info in assert
+// TODO add type checking, improve assert
 #define LVAL_ASSERT(e, args, cond, err) \
 	if (!(cond)) { \
 		if (e->debug) \
