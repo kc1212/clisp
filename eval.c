@@ -21,6 +21,7 @@ static lval* _lval_double(double x);
 static lval* _lval_sym(const char sym[]);
 static lval* _lval_fun(lbuiltin func);
 static lval* _lval_lambda(lval* formals, lval* body);
+static lval* _lval_call(lenv* e, lval* f, lval* a);
 static int _add_builtin_to_env(lenv* e, char name[], lbuiltin func);
 
 // public functions ////////////////////////////////////////////////////////////
@@ -34,7 +35,6 @@ int init_env(lenv* e)
 	_add_builtin_to_env(e, "cons", builtin_cons);
 	_add_builtin_to_env(e, "len",  builtin_len );
 	_add_builtin_to_env(e, "init", builtin_init);
-	_add_builtin_to_env(e, "def",  builtin_def);
 
 	_add_builtin_to_env(e, "+", builtin_add);
 	_add_builtin_to_env(e, "-", builtin_sub);
@@ -44,6 +44,10 @@ int init_env(lenv* e)
 	_add_builtin_to_env(e, "^", builtin_pow);
 	_add_builtin_to_env(e, "min", builtin_min);
 	_add_builtin_to_env(e, "max", builtin_max);
+
+	_add_builtin_to_env(e, "\\", builtin_lambda);
+	_add_builtin_to_env(e, "def", builtin_def);
+	_add_builtin_to_env(e, "=", builtin_put);
 
 	// builtins under different name
 	_add_builtin_to_env(e, "list", builtin_quote);
@@ -264,25 +268,6 @@ lval* builtin_init(lenv* e, lval* a)
 	return v;
 }
 
-lval* builtin_def(lenv* e, lval* a)
-{
-	LVAL_ASSERT(e, a, (a->cell[0]->type == LVAL_QEXPR), LERR_BAD_TYPE);
-
-	lval* syms = a->cell[0]; // first arg is symbol list
-
-	for (int i = 0; i < syms->count; i++)
-		LVAL_ASSERT(e, a, (syms->cell[i]->type == LVAL_SYM), LERR_BAD_TYPE);
-
-	LVAL_ASSERT(e, a, (syms->count == a->count-1), LERR_BAD_ARGS_COUNT);
-
-	for (int i = 0; i < syms->count; i++)
-		lenv_put(e, syms->cell[i], a->cell[i+1]);
-
-	lval_del(a);
-	return _lval_sexpr();
-
-}
-
 lval* builtin_lambda(lenv* e, lval* a)
 {
 	LVAL_ASSERT(e, a, (a->cell[0]->count == 2), LERR_BAD_ARGS_COUNT);
@@ -290,6 +275,7 @@ lval* builtin_lambda(lenv* e, lval* a)
 	LVAL_ASSERT(e, a, (a->cell[1]->type == LVAL_QEXPR), LERR_BAD_TYPE);
 
 	for (int i = 0; i < a->cell[0]->count; i++) {
+		LVAL_ASSERT(e, a, (LVAL_SYM == a->cell[0]->cell[i]->type), LERR_BAD_TYPE);
 //		LASSERT(e, a, (a->cell[0]->cell[i]->type == LVAL_SYM),
 //				"Cannot define non-symbol. Got %s, Expected %s.",
 //				ltype_name(a->cell[0]->cell[i]->type), ltype_name(LVAL_SYM));
@@ -303,6 +289,35 @@ lval* builtin_lambda(lenv* e, lval* a)
 	return _lval_lambda(formals, body);
 }
 
+lval* builtin_var(lenv* e, lval* a, char* func)
+{
+	LVAL_ASSERT(e, a, (LVAL_QEXPR == a->cell[0]->type), LERR_BAD_TYPE);
+//	LASSERT_TYPE(func, a, 0, LVAL_QEXPR);
+
+	lval* syms = a->cell[0];
+	for (int i = 0; i < syms->count; i++) {
+		LVAL_ASSERT(e, a, (LVAL_SYM == syms->cell[i]->type), LERR_BAD_SYMBOL);
+//		LASSERT(a, (syms->cell[i]->type == LVAL_SYM),
+//			"Function '%s' cannot define non-symbol. Got %s, Expected %s.",
+//			func, ltype_name(syms->cell[i]->type), ltype_name(LVAL_SYM));
+	}
+
+	LVAL_ASSERT(e, a, (syms->count == a->count-1), LERR_BAD_ARGS_COUNT);
+//	LASSERT(a, (syms->count == a->count-1),
+//		"Function '%s' passed too many arguments for symbols. Got %i, Expected %i.",
+//		func, syms->count, a->count-1);
+
+	for (int i = 0; i < syms->count; i++) {
+		if (strcmp(func, "def") == 0) // TODO potential buffer overflow
+			lenv_def(e, syms->cell[i], a->cell[i+1]);
+		else if (strcmp(func, "=")   == 0)
+			lenv_put(e, syms->cell[i], a->cell[i+1]);
+	}
+
+	lval_del(a);
+	return _lval_sexpr();
+}
+
 lval* builtin_add(lenv* e, lval* a) { return builtin_op(e, a, "+"); }
 lval* builtin_sub(lenv* e, lval* a) { return builtin_op(e, a, "-"); }
 lval* builtin_mul(lenv* e, lval* a) { return builtin_op(e, a, "*"); }
@@ -311,6 +326,8 @@ lval* builtin_mod(lenv* e, lval* a) { return builtin_op(e, a, "%"); }
 lval* builtin_pow(lenv* e, lval* a) { return builtin_op(e, a, "^"); }
 lval* builtin_min(lenv* e, lval* a) { return builtin_op(e, a, "min"); }
 lval* builtin_max(lenv* e, lval* a) { return builtin_op(e, a, "max"); }
+lval* builtin_def(lenv* e, lval* a) { return builtin_var(e, a, "def"); }
+lval* builtin_put(lenv* e, lval* a) { return builtin_var(e, a, "="); }
 
 
 // private functions: //////////////////////////////////////////////////////////
@@ -379,7 +396,7 @@ static lval* _eval_sexpr(lenv* e, lval* v)
 		return lval_err(LERR_BAD_SEXPR_START);
 	}
 
-	lval* result = f->builtin(e, v);
+	lval* result = _lval_call(e, f, v);
 	lval_del(f);
 	return result;
 }
@@ -510,6 +527,69 @@ static int _add_builtin_to_env(lenv* e, char name[], lbuiltin func)
 	return 0;
 }
 
+
+static lval* _lval_call(lenv* e, lval* f, lval* a)
+{
+	if (f->builtin)
+		return f->builtin(e, a);
+
+//	int given = a->count;
+//	int total = f->formals->count;
+
+	while (a->count) {
+		if (f->formals->count == 0) {
+			lval_del(a);
+			return lval_err(LERR_TOO_MANY_ARGS);
+		}
+
+		lval* sym = _lval_pop(f->formals, 0);
+
+		// special case to deal with '&'
+		if (strcmp(sym->sym, "&") == 0) {
+			if (f->formals->count != 1) {
+				lval_del(a);
+				return lval_err(LERR_BAD_SYMBOL);
+				// return lval_err("Function format invalid. Symbol '&' not followed by single symbol.");
+			}
+			lval* nsym = _lval_pop(f->formals, 0);
+			lenv_put(f->env, nsym, builtin_quote(e, a));
+			lval_del(sym);
+			lval_del(nsym);
+			break;
+		}
+
+		lval* val = _lval_pop(a, 0);
+		lenv_put(f->env, sym, val);
+		lval_del(sym);
+		lval_del(val);
+	}
+
+	lval_del(a);
+
+	// if '&' remains in formal list it should be bound to empty list
+	if (f->formals->count > 0 && strcmp(f->formals->cell[0]->sym, "&") == 0) {
+		if (f->formals->count != 2) {
+			return lval_err(LERR_BAD_SYMBOL);
+			// return lval_err("Function format invalid. Symbol '&' not followed by single symbol.");
+		}
+
+		lval_del(_lval_pop(f->formals, 0));
+		lval* sym = _lval_pop(f->formals, 0);
+		lval* val = _lval_qexpr();
+
+		lenv_put(f->env, sym, val);
+		lval_del(sym);
+		lval_del(val);
+	}
+
+	if (f->formals->count == 0) {
+		f->env->par = e;
+		return builtin_eval(f->env, _lval_add_toback(_lval_sexpr(), lval_copy(f->body)));
+	}
+
+	// return partially evalulated function otherwise
+	return lval_copy(f);
+}
 
 
 

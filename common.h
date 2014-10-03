@@ -23,35 +23,41 @@
 #define log_info(M, ...) log_info_to(stderr, M, __VA_ARGS__)
 #define debug(M, ...) debug_to(stderr, M, __VA_ARGS__)
 
-// constants
-enum LVAL_TYPES
-{
-	LVAL_LNG,
-	LVAL_DBL,
-	LVAL_SYM,
-	LVAL_FUN,
-	LVAL_SEXPR,
-	LVAL_QEXPR,
-	LVAL_ERR
-};
+#define GENERATE_ENUM(ENUM) ENUM,
+#define GENERATE_STRING(STRING) #STRING,
 
-enum LVAL_ERRS
-{
-	LERR_DIV_ZERO,
-	LERR_BAD_OP,
-	LERR_BAD_NUM,
-	LERR_BAD_SEXPR_START,
-	LERR_BAD_FUNCTION,
-	LERR_BAD_SYMBOL,
-	LERR_TOO_MANY_ARGS,
-	LERR_BAD_ARGS_COUNT,
-	LERR_BAD_TYPE,
-	LERR_EMPTY,
-	LERR_OTHER
-};
+// generate lval types and strings
+#define FOREACH_LVAL_TYPE(TYPE) \
+	TYPE(LVAL_LNG) \
+	TYPE(LVAL_DBL) \
+	TYPE(LVAL_SYM) \
+	TYPE(LVAL_FUN) \
+	TYPE(LVAL_SEXPR) \
+	TYPE(LVAL_QEXPR) \
+	TYPE(LVAL_ERR) \
+
+enum LVAL_TYPES { FOREACH_LVAL_TYPE(GENERATE_ENUM) };
+static const char* LVAL_TYPE_STRINGS[] = { FOREACH_LVAL_TYPE(GENERATE_STRING) };
+
+// generate lval errors and strings
+#define FOREACH_LVAL_ERR(TYPE) \
+	TYPE(LERR_DIV_ZERO) \
+	TYPE(LERR_BAD_OP) \
+	TYPE(LERR_BAD_NUM) \
+	TYPE(LERR_BAD_SEXPR_START) \
+	TYPE(LERR_BAD_FUNCTION) \
+	TYPE(LERR_BAD_SYMBOL) \
+	TYPE(LERR_TOO_MANY_ARGS) \
+	TYPE(LERR_BAD_ARGS_COUNT) \
+	TYPE(LERR_BAD_TYPE) \
+	TYPE(LERR_EMPTY) \
+	TYPE(LERR_OTHER) \
+
+enum LVAL_ERRS { FOREACH_LVAL_ERR(GENERATE_ENUM) };
+static const char* LVAL_ERR_STRINGS[] = { FOREACH_LVAL_ERR(GENERATE_STRING) };
 
 // TODO, need better way to output function names in error messages
-static const char* const err_strings[] =
+static const char* const LVAL_ERR_DESCRIPTIONS[] =
 {
 	"Error: Division By Zero!\n",
 	"Error: Invalid Operator!\n",
@@ -125,6 +131,7 @@ lenv* lenv_new(void);
 void lenv_del(lenv* e);
 lval* lenv_get(lenv* e, lval* k);
 int lenv_put(lenv* e, lval* k, lval* v);
+int lenv_def(lenv* e, lval* k, lval* v);
 lenv* lenv_copy(lenv* e);
 
 // others

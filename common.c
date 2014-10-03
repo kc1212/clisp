@@ -54,9 +54,10 @@ void lval_del(lval* v)
 
 lval* lval_copy(lval* v)
 {
+	lval* x = (lval*)calloc(1, sizeof(lval));
+	if (NULL == x)
+		return NULL;
 
-	lval* x = (lval*)malloc(sizeof(lval));
-	assert(x);
 	x->type = v->type;
 
 	switch (v->type)
@@ -103,13 +104,25 @@ lval* lval_copy(lval* v)
 
 lenv* lenv_copy(lenv* e)
 {
-	lenv* n = calloc(1,sizeof(lenv));
+	lenv* n = calloc(1 ,sizeof(lenv));
+	if (NULL == n)
+		return NULL;
+
 	n->par = e->par;
 	n->count = e->count;
+
 	n->syms = malloc(sizeof(char*) * n->count);
+	if (NULL == n->syms)
+		return NULL;
+
 	n->vals = malloc(sizeof(lval*) * n->count);
+	if (NULL == n->vals)
+		return NULL;
+
 	for (int i = 0; i < e->count; i++) {
 		n->syms[i] = malloc(strlen(e->syms[i]) + 1);
+		if (NULL == n->syms[i])
+			return NULL;
 		strcpy(n->syms[i], e->syms[i]);
 		n->vals[i] = lval_copy(e->vals[i]);
 	}
@@ -118,11 +131,12 @@ lenv* lenv_copy(lenv* e)
 
 lenv* lenv_new(void)
 {
-	lenv* e = (lenv*)malloc(sizeof(lenv));
+	lenv* e = (lenv*)calloc(1, sizeof(lenv));
 	if (NULL == e) return NULL;
 	e->count = 0;
 	e->syms = NULL;
 	e->vals = NULL;
+	e->par = NULL;
 	e->debug = 1;
 	return e;
 }
@@ -154,6 +168,11 @@ lval* lenv_get(lenv* e, lval* k)
 		if (strcmp(e->syms[i], k->sym) == 0)
 			return lval_copy(e->vals[i]);
 	}
+
+	// look in parent if symbol is not found
+	if (e->par)
+		return lenv_get(e->par, k);
+
 	if (e->debug)
 		debug("Symbol: '%s' not found.", k->sym);
 	return lval_err(LERR_BAD_SYMBOL);
@@ -180,7 +199,12 @@ int lenv_put(lenv* e, lval* k, lval* v) {
 	return 0;
 }
 
-
+int lenv_def(lenv* e, lval* k, lval* v)
+{
+	while (e->par)
+		e = e->par;
+	return lenv_put(e, k, v);
+}
 
 int colon_commands(const char* input, lenv* e)
 {
@@ -228,30 +252,34 @@ static long _lval_expr_snprint(lval* v, const char open, const char close, char*
 	long tot = 0; // total number of characters printed (copied) to str excluding '\0'
 	long ret = 0;
 
-	if (n < 2) { return tot; };
+	if (n < 2)
+		return tot;
 
 	ret = snprintf(str, 2, "%c", open);
 	tot += ret; // should be 1
 
-	for (int i = 0; i < v->count; i++)
-	{
-		if (n-tot < 2) { return tot; }
+	for (int i = 0; i < v->count; i++) {
+		if (n-tot < 2)
+			return tot;
 
 		ret = _lval_snprint(v->cell[i], str+tot, n-tot);
-		if (ret < 0) { return ret; }
+		if (ret < 0)
+			return ret;
 		tot += ret;
 
-		if (i != (v->count-1))
-		{
-			if (n-tot < 2) { return tot; }
+		if (i != (v->count-1)) { // not the last element
+			if (n-tot < 2)
+				return tot;
 
 			ret = snprintf(str+tot, n-tot, " ");
-			if (ret < 0) { return ret; }
+			if (ret < 0)
+				return ret;
 			tot += ret;
 		}
 	}
 
-	if (n-tot < 2) { return tot; }
+	if (n-tot < 2)
+		return tot;
 
 	ret = snprintf(str+tot, 2, "%c", close);
 	tot += ret; // should be 0
@@ -261,19 +289,32 @@ static long _lval_expr_snprint(lval* v, const char open, const char close, char*
 
 static void _lval_print(lval* v, FILE *fp)
 {
-	switch (v->type)
-	{
+	switch (v->type) {
 		case LVAL_LNG:		fprintf(fp, "%li", v->data.lng);	break;
 		case LVAL_DBL:		fprintf(fp, "%f", v->data.dbl);	break;
 		case LVAL_SYM:		fprintf(fp, "%s", v->sym);	break;
-		case LVAL_SEXPR:	_lval_expr_print(v, '(', ')', fp);	break;
-		case LVAL_QEXPR:	_lval_expr_print(v, '{', '}', fp);	break;
-		case LVAL_FUN:		fprintf(fp, "%s", "<function>");	break;
+		case LVAL_SEXPR:
+			_lval_expr_print(v, '(', ')', fp);
+			break;
+		case LVAL_QEXPR:
+			_lval_expr_print(v, '{', '}', fp);
+			break;
+		case LVAL_FUN:
+			if (v->builtin)
+				fprintf(fp, "%s", "<builtin>");
+			else {
+				fprintf(fp, "(\\ ");
+				_lval_print(v->formals, fp);
+				fputc(' ', fp);
+				_lval_print(v->body, fp);
+				fputc(')', fp);
+			}
+			break;
 		case LVAL_ERR:
-			fprintf(fp, "%s", err_strings[v->err]);
+			fprintf(fp, "%s", LVAL_ERR_DESCRIPTIONS[v->err]);
 			break;
 		default:
-			fprintf(fp, "%s", err_strings[LERR_OTHER]);
+			fprintf(fp, "%s", LVAL_ERR_DESCRIPTIONS[LERR_OTHER]);
 			break;
 	}
 }
@@ -281,10 +322,10 @@ static void _lval_print(lval* v, FILE *fp)
 static long _lval_snprint(lval* v, char* str, const long n)
 {
 	long ret = -1;
-	if (n < 0) { return ret; }
+	if (n < 0)
+		return ret;
 
-	switch (v->type)
-	{
+	switch (v->type) {
 		case LVAL_LNG:		ret = snprintf(str, n, "%li", v->data.lng);	break;
 		case LVAL_DBL:		ret = snprintf(str, n, "%f", v->data.dbl);	break;
 		case LVAL_SYM:		ret = snprintf(str, n, "%s", v->sym);		break;
@@ -292,14 +333,14 @@ static long _lval_snprint(lval* v, char* str, const long n)
 		case LVAL_SEXPR:
 			ret = _lval_expr_snprint(v, '(', ')', str, n);
 			break;
-		case LVAL_QEXPR: // TODO, change to use quote
+		case LVAL_QEXPR:
 			ret = _lval_expr_snprint(v, '{', '}', str, n);
 			break;
 		case LVAL_ERR:
-			ret = snprintf(str, n, "%s", err_strings[v->err]);
+			ret = snprintf(str, n, "%s", LVAL_ERR_DESCRIPTIONS[v->err]);
 			break;
 		default:
-			ret = snprintf(str, n, "%s", err_strings[LERR_OTHER]);
+			ret = snprintf(str, n, "%s", LVAL_ERR_DESCRIPTIONS[LERR_OTHER]);
 			break;
 	}
 	return ret;
@@ -315,9 +356,8 @@ int _lenv_print(lenv* e)
 int _lenv_fprint(lenv* e, FILE* f)
 {
 	int i = 0;
-	for (; i < e->count-1; i++) {
+	for (; i < e->count-1; i++)
 		fprintf(f, "%s ", e->syms[i]);
-	}
 	fprintf(f, "%s\n", e->syms[i]);
 	return 0;
 }

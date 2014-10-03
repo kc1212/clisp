@@ -459,6 +459,11 @@ int test_def()
 	return 0;
 }
 
+int test_put()
+{
+	return 0;
+}
+
 int run_tests(void)
 {
 	int count = 0; // used in RUN_TEST macro
