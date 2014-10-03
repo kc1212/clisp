@@ -461,6 +461,51 @@ int test_def()
 
 int test_put()
 {
+	const int N = 32;
+	char output[N];
+
+	STARTUP(ast, v, "= {x} 100");
+	TEST_ASSERT(lval_snprintln(v, output, N));
+	TEST_ASSERT(0 == strncmp("()", output, N));
+	TEST_ASSERT(LVAL_SEXPR == v->type); // TODO better to return nothing
+	TEARDOWN(ast, v);
+
+	STARTUP_NO_DECLARE(ast, v, "x");
+	TEST_ASSERT(LVAL_LNG == v->type);
+	TEST_ASSERT(100 == v->data.lng);
+	TEARDOWN(ast, v);
+
+	return 0;
+}
+
+int test_lambda()
+{
+	const int N = 32;
+	char output[N];
+
+	STARTUP(ast, v, "(\\ {x y z} {+ x y z}) 1 2 3");
+	TEST_ASSERT(lval_snprintln(v, output, N));
+	TEST_ASSERT(0 == strncmp("6", output, N));
+	TEARDOWN(ast, v);
+
+	STARTUP_NO_DECLARE(ast, v, "(\\ {f & xs} {f xs}) head 1 2 3 4");
+	TEST_ASSERT(lval_snprintln(v, output, N));
+	TEST_ASSERT(LVAL_QEXPR == v->type);
+	TEST_ASSERT(0 == strncmp("{1}", output, N));
+	TEARDOWN(ast, v);
+
+	STARTUP_NO_DECLARE(ast, v, "def {fun} (\\ {x y} { + (* 7 x) (* 2 y)})");
+	TEST_ASSERT(lval_snprintln(v, output, N));
+	TEST_ASSERT(0 == strncmp("()", output, N));
+	TEST_ASSERT(LVAL_SEXPR == v->type);
+	TEARDOWN(ast, v);
+
+	STARTUP_NO_DECLARE(ast, v, "fun 3 8");
+	TEST_ASSERT(lval_snprintln(v, output, N));
+	TEST_ASSERT(LVAL_LNG == v->type);
+	TEST_ASSERT(0 == strncmp("37", output, N));
+	TEARDOWN(ast, v);
+
 	return 0;
 }
 
@@ -497,6 +542,8 @@ int run_tests(void)
 	RUN_TEST(test_snprint_exprs_bad);
 	RUN_TEST(test_snprint_exprs_bad2);
 	RUN_TEST(test_def);
+	RUN_TEST(test_put);
+	RUN_TEST(test_lambda);
 	printf("\tDone. (%d tests passed)\n", count);
 	return 0;
 }
