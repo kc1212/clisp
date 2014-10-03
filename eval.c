@@ -270,7 +270,7 @@ lval* builtin_init(lenv* e, lval* a)
 
 lval* builtin_lambda(lenv* e, lval* a)
 {
-	LVAL_ASSERT(e, a, (a->cell[0]->count == 2), LERR_BAD_ARGS_COUNT);
+	LVAL_ASSERT(e, a, (a->count == 2), LERR_BAD_ARGS_COUNT);
 	LVAL_ASSERT(e, a, (a->cell[0]->type == LVAL_QEXPR), LERR_BAD_TYPE);
 	LVAL_ASSERT(e, a, (a->cell[1]->type == LVAL_QEXPR), LERR_BAD_TYPE);
 
@@ -281,7 +281,7 @@ lval* builtin_lambda(lenv* e, lval* a)
 //				ltype_name(a->cell[0]->cell[i]->type), ltype_name(LVAL_SYM));
 	}
 
-	// pop first two arguments and pass them to lval_lambda */
+	// pop first two arguments and pass them to lval_lambda
 	lval* formals = _lval_pop(a, 0);
 	lval* body = _lval_pop(a, 0);
 	lval_del(a);
@@ -533,8 +533,8 @@ static lval* _lval_call(lenv* e, lval* f, lval* a)
 	if (f->builtin)
 		return f->builtin(e, a);
 
-//	int given = a->count;
-//	int total = f->formals->count;
+	if (e->debug)
+		debug("given: %d, total: %d", a->count, f->formals->count) ;
 
 	while (a->count) {
 		if (f->formals->count == 0) {
@@ -543,6 +543,8 @@ static lval* _lval_call(lenv* e, lval* f, lval* a)
 		}
 
 		lval* sym = _lval_pop(f->formals, 0);
+		if (e->debug)
+			debug("processing symbol: %s", sym->sym);
 
 		// special case to deal with '&'
 		if (strcmp(sym->sym, "&") == 0) {
@@ -552,6 +554,9 @@ static lval* _lval_call(lenv* e, lval* f, lval* a)
 				// return lval_err("Function format invalid. Symbol '&' not followed by single symbol.");
 			}
 			lval* nsym = _lval_pop(f->formals, 0);
+			if (e->debug)
+				debug("processing symbol after &: %s", nsym->sym);
+
 			lenv_put(f->env, nsym, builtin_quote(e, a));
 			lval_del(sym);
 			lval_del(nsym);
@@ -573,6 +578,9 @@ static lval* _lval_call(lenv* e, lval* f, lval* a)
 			// return lval_err("Function format invalid. Symbol '&' not followed by single symbol.");
 		}
 
+		if (e->debug)
+			debug("'&' still in formal list%s", "");
+
 		lval_del(_lval_pop(f->formals, 0));
 		lval* sym = _lval_pop(f->formals, 0);
 		lval* val = _lval_qexpr();
@@ -584,6 +592,7 @@ static lval* _lval_call(lenv* e, lval* f, lval* a)
 
 	if (f->formals->count == 0) {
 		f->env->par = e;
+		// TODO do we need to fix f->body's type? i.e. "(\{x & xy} {+ x xy}) 1 2" fails
 		return builtin_eval(f->env, _lval_add_toback(_lval_sexpr(), lval_copy(f->body)));
 	}
 

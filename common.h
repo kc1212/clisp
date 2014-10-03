@@ -16,7 +16,7 @@
 #define log_err_to(fd, M, ...) fprintf(fd, "[ERROR] (%s:%d: errno: %s) " M "\n", __FILE__ , __LINE__ , clean_errno() , __VA_ARGS__)
 #define log_warn_to(fd, M, ...) fprintf(fd, "[WARN] (%s:%d: errno: %s) " M "\n", __FILE__, __LINE__, clean_errno(), __VA_ARGS__)
 #define log_info_to(fd, M, ...) fprintf(fd, "[INFO] (%s:%d) " M "\n", __FILE__, __LINE__, __VA_ARGS__)
-#define debug_to(fd, M, ...) fprintf(fd, "DEBUG %s:%d: " M "\n", __FILE__ , __LINE__ , __VA_ARGS__)
+#define debug_to(fd, M, ...) fprintf(fd, "[DEBUG] (%s:%d %s): " M "\n", __FILE__ , __LINE__ , __FUNCTION__, __VA_ARGS__)
 
 #define log_err(M, ...) log_err_to(stderr, M, __VA_ARGS__)
 #define log_warn(M, ...) log_warn_to(stderr, M, __VA_ARGS__)
@@ -133,6 +133,7 @@ lval* lenv_get(lenv* e, lval* k);
 int lenv_put(lenv* e, lval* k, lval* v);
 int lenv_def(lenv* e, lval* k, lval* v);
 lenv* lenv_copy(lenv* e);
+int lenv_print(lenv* e);
 
 // others
 int colon_commands(const char* input, lenv* e);

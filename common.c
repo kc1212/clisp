@@ -165,7 +165,7 @@ void lenv_del(lenv* e)
 lval* lenv_get(lenv* e, lval* k)
 {
 	for (int i = 0; i < e->count; i++) {
-		if (strcmp(e->syms[i], k->sym) == 0)
+		if (strcmp(e->syms[i], k->sym) == 0) // FIXME buffer overflow
 			return lval_copy(e->vals[i]);
 	}
 
@@ -206,6 +206,13 @@ int lenv_def(lenv* e, lval* k, lval* v)
 	return lenv_put(e, k, v);
 }
 
+int lenv_print(lenv* e)
+{
+	_lenv_fprint(e, stdout);
+	return 0;
+}
+
+
 int colon_commands(const char* input, lenv* e)
 {
 	int action = COLON_OTHER;
@@ -228,7 +235,7 @@ int colon_commands(const char* input, lenv* e)
 		action = COLON_CONTINUE;
 	}
 	else if (!strncmp(input, ":env", 4)) {
-		_lenv_print(e);
+		lenv_print(e);
 		action = COLON_CONTINUE;
 	}
 	return action;
@@ -344,13 +351,6 @@ static long _lval_snprint(lval* v, char* str, const long n)
 			break;
 	}
 	return ret;
-}
-
-
-int _lenv_print(lenv* e)
-{
-	_lenv_fprint(e, stdout);
-	return 0;
 }
 
 int _lenv_fprint(lenv* e, FILE* f)
