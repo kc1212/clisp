@@ -57,6 +57,11 @@ lval* builtin_lambda(lenv* e, lval* a);
 lval* builtin_var(lenv* e, lval* a, char* func);
 lval* builtin_def(lenv* e, lval* a);
 lval* builtin_put(lenv* e, lval* a);
+lval* builtin_ord(lenv* e, lval *a, char* op);
+lval* builtin_gt(lenv* e, lval* a);
+lval* builtin_lt(lenv* e, lval* a);
+lval* builtin_ge(lenv* e, lval* a);
+lval* builtin_le(lenv* e, lval* a);
 
 #endif
 

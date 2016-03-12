@@ -16,7 +16,7 @@
 #define log_err_to(fd, M, ...) fprintf(fd, "[ERROR] (%s:%d: errno: %s) " M "\n", __FILE__ , __LINE__ , clean_errno() , __VA_ARGS__)
 #define log_warn_to(fd, M, ...) fprintf(fd, "[WARN] (%s:%d: errno: %s) " M "\n", __FILE__, __LINE__, clean_errno(), __VA_ARGS__)
 #define log_info_to(fd, M, ...) fprintf(fd, "[INFO] (%s:%d) " M "\n", __FILE__, __LINE__, __VA_ARGS__)
-#define debug_to(fd, M, ...) fprintf(fd, "[DEBUG] (%s:%d %s): " M "\n", __FILE__ , __LINE__ , __FUNCTION__, __VA_ARGS__)
+#define debug_to(fd, M, ...) fprintf(fd, "[DEBUG] (%s:%d %s): " M "\n", __FILE__ , __LINE__ , __func__, __VA_ARGS__)
 
 #define log_err(M, ...) log_err_to(stderr, M, __VA_ARGS__)
 #define log_warn(M, ...) log_warn_to(stderr, M, __VA_ARGS__)
@@ -37,7 +37,7 @@
 	TYPE(LVAL_ERR) \
 
 enum LVAL_TYPES { FOREACH_LVAL_TYPE(GENERATE_ENUM) };
-static const char* LVAL_TYPE_STRINGS[] = { FOREACH_LVAL_TYPE(GENERATE_STRING) };
+// static const char* LVAL_TYPE_STRINGS[] = { FOREACH_LVAL_TYPE(GENERATE_STRING) };
 
 // generate lval errors and strings
 #define FOREACH_LVAL_ERR(TYPE) \
@@ -54,7 +54,7 @@ static const char* LVAL_TYPE_STRINGS[] = { FOREACH_LVAL_TYPE(GENERATE_STRING) };
 	TYPE(LERR_OTHER) \
 
 enum LVAL_ERRS { FOREACH_LVAL_ERR(GENERATE_ENUM) };
-static const char* LVAL_ERR_STRINGS[] = { FOREACH_LVAL_ERR(GENERATE_STRING) };
+// static const char* LVAL_ERR_STRINGS[] = { FOREACH_LVAL_ERR(GENERATE_STRING) };
 
 // TODO, need better way to output function names in error messages
 static const char* const LVAL_ERR_DESCRIPTIONS[] =

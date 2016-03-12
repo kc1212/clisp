@@ -509,6 +509,16 @@ int test_lambda()
 	return 0;
 }
 
+int test_curry() {
+	// TODO
+	return 0;
+}
+
+int test_order() {
+	// TODO
+	return 0;
+}
+
 int run_tests(void)
 {
 	int count = 0; // used in RUN_TEST macro

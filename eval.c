@@ -49,6 +49,11 @@ int init_env(lenv* e)
 	_add_builtin_to_env(e, "def", builtin_def);
 	_add_builtin_to_env(e, "=", builtin_put);
 
+	_add_builtin_to_env(e, ">", builtin_gt);
+	_add_builtin_to_env(e, "<", builtin_lt);
+	_add_builtin_to_env(e, ">=", builtin_ge);
+	_add_builtin_to_env(e, "<=", builtin_le);
+
 	// builtins under different name
 	_add_builtin_to_env(e, "list", builtin_quote);
 	_add_builtin_to_env(e, "car", builtin_head);
@@ -174,6 +179,47 @@ lval* ast_to_lval(mpc_ast_t* ast)
 	}
 
 	return x;
+}
+
+lval* builtin_ord(lenv* e, lval *a, char* op) {
+	LVAL_ASSERT(e, a, (a->count == 2), LERR_TOO_MANY_ARGS);
+	for (int i = 0; i < 2; i++) {
+		LVAL_ASSERT(e, a,
+			(a->cell[i]->type == LVAL_DBL || a->cell[i]->type == LVAL_LNG),
+			LERR_BAD_TYPE);
+	}
+
+	int r;
+	double val[2];
+
+	for (int i = 0; i < 2; i++) {
+		if (a->cell[i]->type == LVAL_DBL) {
+			val[i] = a->cell[i]->data.dbl;
+		}
+		else if (a->cell[i]->type == LVAL_LNG) {
+			val[i]= (double)a->cell[i]->data.lng;
+		}
+		else {
+			return lval_err(LERR_OTHER);
+		}
+	}
+
+	// TODO need to consider epsilon for when comparing doubles after conversion
+	if (strcmp(op, ">")  == 0) {
+		r = val[0] > val[1];
+	}
+	if (strcmp(op, "<")  == 0) {
+		r = val[0] < val[1];
+	}
+	if (strcmp(op, ">=") == 0) {
+		r = val[0] >= val[1];
+	}
+	if (strcmp(op, "<=") == 0) {
+		r = val[0] <= val[1];
+	}
+
+	lval_del(a);
+	return _lval_long(r);
 }
 
 lval* builtin_head(lenv* e, lval* a)
@@ -326,9 +372,14 @@ lval* builtin_mod(lenv* e, lval* a) { return builtin_op(e, a, "%"); }
 lval* builtin_pow(lenv* e, lval* a) { return builtin_op(e, a, "^"); }
 lval* builtin_min(lenv* e, lval* a) { return builtin_op(e, a, "min"); }
 lval* builtin_max(lenv* e, lval* a) { return builtin_op(e, a, "max"); }
+
 lval* builtin_def(lenv* e, lval* a) { return builtin_var(e, a, "def"); }
 lval* builtin_put(lenv* e, lval* a) { return builtin_var(e, a, "="); }
 
+lval* builtin_gt(lenv* e, lval* a) { return builtin_ord(e, a, ">"); }
+lval* builtin_lt(lenv* e, lval* a) { return builtin_ord(e, a, "<"); }
+lval* builtin_ge(lenv* e, lval* a) { return builtin_ord(e, a, ">="); }
+lval* builtin_le(lenv* e, lval* a) { return builtin_ord(e, a, "<="); }
 
 // private functions: //////////////////////////////////////////////////////////
 
